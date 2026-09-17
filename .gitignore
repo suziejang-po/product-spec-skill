@@ -1,1 +1,3 @@
 docs/samples/
+.omc/
+__pycache__/
