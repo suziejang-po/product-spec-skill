@@ -26,17 +26,18 @@ Node.js가 있어야 다이어그램을 그린다 (`npx @mermaid-js/mermaid-cli`
 
 또는 "스펙 작성해줘", "PRD 만들어줘", "문서 정리해줘"
 
-흐름: 도메인 팩 수집(첫 실행만) → 골격 초안 → 질문 → 본문 저장(`docs/PRODUCT_SPEC.md`) → 아티팩트 여부 질문 → Confluence 게시
+흐름: 도메인 팩 수집(첫 실행만) → 골격 초안 → 질문(우선순위 순, 5개씩 최대 2회) → 본문 저장(`docs/specs/{슬러그}/spec.md`) → 아티팩트 여부 질문 → Confluence 게시
 
-- `docs/PRODUCT_SPEC.md`가 있으면 변경 섹션만 수정
-- `docs/spec-context.md`(도메인 팩)는 같은 프로젝트에서 재사용
+- 스펙 하나가 폴더 하나. `docs/specs/{슬러그}/` 아래 `spec.md`, `diagrams/`, `sources.md`(출처 기록)
+- 기존 스펙이 있으면 변경 섹션만 수정. 예전 구조 `docs/PRODUCT_SPEC.md`도 인식
+- `docs/spec-context.md`(도메인 팩)는 같은 프로젝트에서 재사용. 사내 정보가 들어가므로 공개 레포면 gitignore
 
 ## 다이어그램을 Confluence에 넣는 두 경로
 
 | 경로 | 조건 | 결과 |
 |---|---|---|
-| 첨부 이미지 | 본인 Atlassian API 토큰을 환경변수로 등록 | 폭 80%로 크게, 선명하게 |
-| Mermaid 블록 | 토큰 없음 | 자동으로 들어가지만 폭 300px로 작게 |
+| 첨부 이미지 | 본인 Atlassian API 토큰을 환경변수로 등록 | 폭 80%로 크게, 선명하게 (⚠️ 토큰 보유자의 첫 실행으로 검증 필요) |
+| Mermaid 블록 | 토큰 없음 | 자동으로 들어가지만 폭 300px로 작게. 본문이 40KB를 넘으면 첫 그림만 |
 
 토큰 등록 (본인 것만. 파일이나 문서에 적지 않음)
 

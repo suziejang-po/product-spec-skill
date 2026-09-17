@@ -18,14 +18,21 @@
 
 ## 렌더
 
+파일 이름 규칙 (세 파일이 한 세트)
+- 코드 `{스펙 폴더}/diagrams/{이름}.mmd`
+- 첨부용 그림 `{스펙 폴더}/diagrams/{이름}.png` (폭 1200, 2배)
+- 블록용 그림 `{스펙 폴더}/diagrams/{이름}-macro.png` (폭 300, 1배)
+
 ```
-bash scripts/render_diagram.sh docs/diagrams/flow.mmd docs/diagrams/flow.png attach   # 첨부용, 폭 1200 x 2배
-bash scripts/render_diagram.sh docs/diagrams/flow.mmd docs/diagrams/flow.png macro    # 블록용, 폭 300 x 2배
+bash {SKILL_DIR}/scripts/render_diagram.sh diagrams/flow.mmd diagrams/flow.png attach
+bash {SKILL_DIR}/scripts/render_diagram.sh diagrams/flow.mmd diagrams/flow-macro.png macro
 ```
 
-- npx로 `@mermaid-js/mermaid-cli`를 받아 실행. 첫 실행은 1분 정도 걸림. Node.js 필요
-- 실패하면 스크립트가 종료 코드 1과 안내를 냄. 이때는 스펙의 그림 자리에 `⚠️ 다이어그램 렌더 실패 → 코드 확인 필요`를 쓰고 `.mmd` 경로를 적음. 코드 블록을 본문에 넣지 않음
-- 로컬 `docs/PRODUCT_SPEC.md`에는 `![사용자 흐름](diagrams/flow.png)`로 넣음. attach 모드로 렌더한 파일을 씀
+초안 단계에서 두 파일을 모두 만든다. 블록용이 없으면 변환기가 렌더를 다시 시도하지만 시간이 걸린다
+
+- npx로 `@mermaid-js/mermaid-cli@11`을 받아 실행. 첫 실행은 1분 정도 걸림. Node.js 필요
+- 실패하면 스크립트가 종료 코드 1과 원인(로그 마지막 15줄)을 냄. 이때는 스펙의 그림 자리에 `⚠️ 다이어그램 렌더 실패 → 코드 확인 필요`를 쓰고 `.mmd` 경로를 적음. 코드 블록을 본문에 넣지 않음
+- 로컬 스펙에는 `![사용자 흐름](diagrams/{이름}.png)`로 넣음
 
 ## Confluence에 넣는 두 경로
 
@@ -33,27 +40,28 @@ bash scripts/render_diagram.sh docs/diagrams/flow.mmd docs/diagrams/flow.png mac
 
 ### 경로 1. 첨부 이미지 (기본)
 
-1. 페이지가 없으면 먼저 그림 자리를 비운 채 페이지를 만들어 pageId를 받음
-2. `bash scripts/confluence_attach.sh <pageId> docs/diagrams/flow.png` → `{"mediaId", "collection", "filename", "attachmentId"}`
-3. 본문의 그림 자리에 `<figure data-type="media-single" data-layout="center" data-width="80" data-width-type="percentage"><div data-type="media" data-media-type="file" data-id="{mediaId}" data-collection="{collection}" data-alt="{filename}"></div></figure>`
-4. `updateConfluencePage`로 본문 갱신 (재읽기와 버전 검증은 confluence.md)
-5. mediaId가 비어 있으면(응답에 fileId가 없는 경우) 경로 2로 대신 넣고 안내: "첨부는 올라갔지만 본문 삽입에 필요한 미디어 ID를 받지 못해 블록으로 넣었습니다. 페이지 편집에서 첨부 파일을 끌어다 놓으면 크게 볼 수 있습니다"
+⚠️ 2026-09-17 기준 이 경로는 토큰이 있는 사람이 실제로 한 번 실행해 검증해야 한다. 응답에서 미디어 ID를 읽는 필드(`extensions.fileId`)는 추정값이며, 실측 결과를 이 절에 기록할 것
 
-같은 이름의 파일이 이미 있으면 스크립트가 새 버전으로 올림. 첨부 파일명은 `{스펙 제목 슬러그}-{이름}.png`
+1. 페이지가 없으면 먼저 그림 자리를 비운 채 페이지를 만들어 pageId를 받고 메타에 기록
+2. 그림마다 `bash {SKILL_DIR}/scripts/confluence_attach.sh <pageId> diagrams/{이름}.png` → `{"mediaId", "collection", "filename", "attachmentId"}`. 파일명은 basename 그대로 올라감
+3. 결과를 `media.json`에 모음. 형식: `{"{이름}.png": {"mediaId": "...", "collection": "contentId-<pageId>"}}`
+4. `python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --media-json media.json --out body.html`. 변환기가 그림 자리에 `<figure data-type="media-single" ...>`를 넣음
+5. `updateConfluencePage`로 본문 갱신 (재읽기와 버전 검증은 confluence.md)
+6. mediaId가 비어 있으면 변환기가 그 그림만 블록으로 대체하고 표준 오류에 알림. 안내: "첨부는 올라갔지만 본문 삽입에 필요한 미디어 ID를 받지 못해 블록으로 넣었습니다. 페이지 편집에서 첨부 파일을 끌어다 놓으면 크게 볼 수 있습니다"
+
+같은 이름의 파일이 이미 있으면 스크립트가 새 버전으로 올림
 
 ### 경로 2. 다이어그램 블록 (토큰 없을 때)
 
 Mermaid Chart 앱 매크로. 코드와 PNG를 함께 넣어야 보기 화면에 그림이 뜬다 (코드만 넣으면 빈칸)
 
-```
-python3 scripts/mermaid_macro.py docs/diagrams/flow.mmd docs/diagrams/flow-macro.png
-```
+변환기가 `--diagram-mode macro`일 때 `{이름}.mmd`와 `{이름}-macro.png`로 블록을 만들어 그림 자리에 넣는다. 블록 안에는 PNG가 base64로 들어가므로 본문이 커진다
 
-- 출력된 `<div data-type="extension" data-extension-key="mermaid" ...>` 한 줄을 본문의 그림 자리에 넣음
-- macro 모드로 렌더한 PNG(폭 약 600px)를 씀. 블록이 폭 300px로 줄여 보여주므로 2배 해상도가 선명함
+- 본문 크기 규칙: 변환기가 표준 오류로 알려 주는 본문 크기가 40KB를 넘으면, 첫 번째 그림만 블록으로 넣고 나머지 그림 자리에는 `⚠️ 그림은 {스펙 폴더}/diagrams/{이름}.png를 페이지에 끌어다 놓아 주세요`를 쓴다. 본문을 MCP 도구 인자로 옮길 때 잘림을 막기 위한 규칙
+- 본문은 `--out body.html`로 파일에도 저장하고, `updateConfluencePage`에 넣기 전에 파일 크기와 인자 길이가 같은지 확인한다
 - `size` 값은 표시 크기에 영향이 없음 (2026-09-17 실측). 편집 화면에서 더블클릭하면 앱 에디터에서 코드 수정 가능
 - 게시 안내에 한 줄 추가: "다이어그램은 블록으로 들어가 작게 보입니다. 본인 API 토큰을 등록하면 다음부터 첨부 이미지로 크게 들어갑니다"
 
 ## 수정 모드
 
-흐름이나 상태가 바뀌는 수정이면 `.mmd`를 고치고 같은 모드로 재렌더한 뒤, 경로 1이면 같은 파일명으로 다시 첨부(새 버전), 경로 2면 블록을 새 출력으로 교체
+흐름이나 상태가 바뀌는 수정이면 `.mmd`를 고치고 두 그림을 재렌더한 뒤, 경로 1이면 같은 파일명으로 다시 첨부(새 버전), 경로 2면 변환기를 다시 돌려 전체 본문을 교체

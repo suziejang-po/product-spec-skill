@@ -5,15 +5,18 @@
 - macro: 이미지 경로의 .mmd와 -macro.png를 찾아 Mermaid 블록으로 넣음
 - 표의 첫 열이 #이면 열 폭을 고정하고 첫 열을 40으로 좁힘
 - 변환 직전 금지 기호를 치환"""
+import argparse
 import html
 import json
 import os
 import re
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mermaid_macro import build as build_macro  # noqa: E402
 
+INLINE_CODE = re.compile(r"`[^`]*`")
 REPLACE = {"·": "/", "—": ", ", "–": ", "}
 CIRCLED = {chr(0x2460 + i): f"{i + 1}." for i in range(20)}
 TABLE_WIDTH = 760
@@ -39,9 +42,27 @@ def inline(text):
         p = html.escape(p, quote=False)
         p = re.sub(r"`([^`]+)`", r"<code>\1</code>", p)
         p = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", p)
-        p = re.sub(r"\[([^\]]+)\]\((https?://[^)]+)\)", r'<a href="\2">\1</a>', p)
+        p = re.sub(r"\[([^\]]+)\]\((https?://(?:[^()\s]|\([^()\s]*\))+)\)", r'<a href="\2">\1</a>', p)
         out.append(p)
     return "".join(out)
+
+
+def split_cells(row):
+    """| a | `x|y` | c \\| d | → 인라인 코드 안의 |와 이스케이프된 \\|는 구분자로 보지 않음"""
+    protected = []
+
+    def keep(m):
+        protected.append(m.group(0))
+        return f"\x00{len(protected) - 1}\x00"
+
+    tmp = INLINE_CODE.sub(keep, row).replace("\\|", "\x01")
+    cells = tmp.strip().strip("|").split("|")
+    out = []
+    for c in cells:
+        c = c.replace("\x01", "|")
+        c = re.sub(r"\x00(\d+)\x00", lambda m: protected[int(m.group(1))], c)
+        out.append(c)
+    return out
 
 
 class Converter:
@@ -63,6 +84,9 @@ class Converter:
             self.notes.append(f"첨부 정보 없음: {name}. 블록으로 대체")
         stem = os.path.splitext(os.path.join(self.base_dir, path))[0]
         mmd, png = stem + ".mmd", stem + "-macro.png"
+        if os.path.exists(mmd) and not os.path.exists(png):
+            script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "render_diagram.sh")
+            subprocess.run(["bash", script, mmd, png, "macro"], capture_output=True)
         if os.path.exists(mmd) and os.path.exists(png):
             return build_macro(open(mmd, encoding="utf-8").read().strip(), open(png, "rb").read())
         self.notes.append(f"그림 파일 없음: {mmd} 또는 {png}")
@@ -102,6 +126,17 @@ class Converter:
             if not s:
                 i += 1
                 continue
+            if s.startswith("```"):
+                lang = s[3:].strip()
+                i += 1
+                code = []
+                while i < len(lines) and not lines[i].strip().startswith("```"):
+                    code.append(lines[i])
+                    i += 1
+                i += 1
+                cls = f' class="language-{html.escape(lang)}"' if lang else ""
+                out.append(f"<pre><code{cls}>{html.escape(chr(10).join(code))}</code></pre>")
+                continue
             m = re.match(r"^(#{1,6})\s+(.*)", s)
             if m:
                 out.append(f"<h{len(m.group(1))}>{inline(m.group(2))}</h{len(m.group(1))}>")
@@ -115,8 +150,7 @@ class Converter:
             if s.startswith("|"):
                 rows = []
                 while i < len(lines) and lines[i].strip().startswith("|"):
-                    cells = [c for c in lines[i].strip().strip("|").split("|")]
-                    rows.append(cells)
+                    rows.append(split_cells(lines[i].strip()))
                     i += 1
                 if len(rows) >= 2:
                     out.append(self.table(rows))
@@ -140,20 +174,20 @@ class Converter:
 
 
 def main():
-    args = sys.argv[1:]
-    if not args:
-        print(__doc__)
-        return 2
-    path = args[0]
-    mode = "attach"
-    media = {}
-    if "--diagram-mode" in args:
-        mode = args[args.index("--diagram-mode") + 1]
-    if "--media-json" in args:
-        media = json.load(open(args[args.index("--media-json") + 1], encoding="utf-8"))
-    conv = Converter(os.path.dirname(os.path.abspath(path)), mode, media)
-    body = conv.convert(open(path, encoding="utf-8").read())
+    ap = argparse.ArgumentParser(description="스펙 마크다운을 Confluence HTML로 변환")
+    ap.add_argument("spec")
+    ap.add_argument("--diagram-mode", choices=["attach", "macro"], default="attach")
+    ap.add_argument("--media-json", help='{"파일명": {"mediaId": "...", "collection": "..."}}')
+    ap.add_argument("--out", help="본문을 이 파일에도 저장")
+    a = ap.parse_args()
+    media = json.load(open(a.media_json, encoding="utf-8")) if a.media_json else {}
+    conv = Converter(os.path.dirname(os.path.abspath(a.spec)), a.diagram_mode, media)
+    body = conv.convert(open(a.spec, encoding="utf-8").read())
+    if a.out:
+        with open(a.out, "w", encoding="utf-8") as f:
+            f.write(body)
     sys.stdout.write(body)
+    print(f"\n본문 크기: {len(body.encode('utf-8')) // 1024}KB", file=sys.stderr)
     for n in conv.notes:
         print(n, file=sys.stderr)
     return 0
