@@ -90,7 +90,7 @@ class Converter:
         if os.path.exists(mmd) and os.path.exists(png):
             return build_macro(open(mmd, encoding="utf-8").read().strip(), open(png, "rb").read())
         self.notes.append(f"그림 파일 없음: {mmd} 또는 {png}")
-        return f'<div data-type="panel-warning"><p>⚠️ 다이어그램 파일 없음: {html.escape(path)}</p></div>'
+        return f'<div data-type="panel-warning"><p>다이어그램 파일 없음: {html.escape(path)}. 스펙 폴더의 diagrams에서 그림을 끌어다 놓아 주세요</p></div>'
 
     def table(self, rows):
         header, body = rows[0], rows[2:]
@@ -98,8 +98,12 @@ class Converter:
         numbered = header[0].strip() == "#"
         widths = None
         if numbered:
-            rest = (TABLE_WIDTH - NUM_COL) // max(ncol - 1, 1)
-            widths = [NUM_COL] + [rest] * (ncol - 1)
+            names = [h.strip() for h in header]
+            if names == ["#", "진입점", "화면", "기능", "요구사항"]:
+                widths = [NUM_COL, 140, 140, 120, TABLE_WIDTH - NUM_COL - 400]
+            else:
+                rest = (TABLE_WIDTH - NUM_COL) // max(ncol - 1, 1)
+                widths = [NUM_COL] + [rest] * (ncol - 1)
         attrs = ' data-display-mode="fixed"' if numbered else ""
         out = [f"<table{attrs}><thead><tr>"]
         for i, c in enumerate(header):
