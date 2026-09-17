@@ -1,41 +1,75 @@
-# product-spec-skill
+# product-spec-skill (v4)
 
-Claude Code에서 `/product-spec`으로 호출하는 **Product Spec 작성 에이전트**.
+Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬. 원본 `hyeongkeunpark-bit/product-spec-skill`을 포크해 v4로 재구성
 
-프로젝트 코드와 git 히스토리를 자동 분석해 Wantedlab Product Spec 양식에 맞는 문서를 생성/수정합니다.
+## 무엇이 달라졌나
 
-## 주요 기능
-
-- 프로젝트 컨텍스트 자동 수집 (코드, git, 메모, 배포 설정)
-- 영역(A/B/C) 자동 판별 — 기존 화면 변경 / 새 요소 추가 / 새 화면 생성
-- 페이지 기반 변경 명세 (라우트별 입력 필드, 시나리오, 구현 참고)
-- Mermaid 사용자 플로우 차트
-- Confluence MCP 연동 시 자동 게시/갱신
-- 스킬 업데이트 자동 알림
+- 출처 있는 내용만 쓴다. 코드, 첨부 자료, 대화, 기존 문서에 없는 도메인 서술은 빈칸으로 두고 질문한다
+- 골격 초안을 먼저 보여주고, 리뷰 체크리스트(사용자와 권한, 정책, 시나리오, 기능 상세, UI, 데이터 연동)로 빈 곳을 찾아 한 번에 5개 안팎씩 최대 2회 묻는다
+- 구현 상세는 번호, 진입점, 화면, 기능, 요구사항 5열 표. 기능 하나가 한 행
+- 다이어그램은 코드가 아니라 그림으로 들어간다
+- 문체는 개조식 명사 종결. 가운데점, 줄표, 원형 숫자, 한자어 축약 라벨 금지. 출력 전 자동 검사
 
 ## 설치
 
-Claude Code에게 이 레포 URL을 주고 설치를 요청하면 됩니다:
+Claude Code에 URL을 주고 설치를 요청
 
-> 이 스킬 설치해줘 https://github.com/hyeongkeunpark-bit/product-spec-skill
+> 이 스킬 설치해줘 https://github.com/suziejang-po/product-spec-skill
 
-## 사용법
+Node.js가 있어야 다이어그램을 그린다 (`npx @mermaid-js/mermaid-cli`를 자동으로 받음)
+
+## 사용
 
 ```
 /product-spec
 ```
 
-또는 자연어로:
+또는 "스펙 작성해줘", "PRD 만들어줘", "문서 정리해줘"
+
+흐름: 도메인 팩 수집(첫 실행만) → 골격 초안 → 질문 → 본문 저장(`docs/PRODUCT_SPEC.md`) → 아티팩트 여부 질문 → Confluence 게시
+
+- `docs/PRODUCT_SPEC.md`가 있으면 변경 섹션만 수정
+- `docs/spec-context.md`(도메인 팩)는 같은 프로젝트에서 재사용
+
+## 다이어그램을 Confluence에 넣는 두 경로
+
+| 경로 | 조건 | 결과 |
+|---|---|---|
+| 첨부 이미지 | 본인 Atlassian API 토큰을 환경변수로 등록 | 폭 80%로 크게, 선명하게 |
+| Mermaid 블록 | 토큰 없음 | 자동으로 들어가지만 폭 300px로 작게 |
+
+토큰 등록 (본인 것만. 파일이나 문서에 적지 않음)
+
+```bash
+# https://id.atlassian.com/manage-profile/security/api-tokens 에서 발급 후 ~/.zshrc에 추가
+export ATLASSIAN_EMAIL="본인 회사 이메일"
+export ATLASSIAN_API_TOKEN="발급한 토큰"
+# 사이트가 다르면
+export ATLASSIAN_SITE="wantedlab.atlassian.net"
+```
+
+## 파일 구조
 
 ```
-스펙 작성해줘
-PRD 만들어줘
-문서 정리해줘
+.claude/skills/product-spec/
+  SKILL.md                      실행 흐름과 규칙
+  references/
+    template.md                 스펙 양식 v4
+    template-example.md         가상 서비스 예시 (밀도와 문체 기준)
+    review-checklist.md         리뷰 6개 대항목과 판정 기준
+    question-map.md             빈칸을 질문으로 바꾸는 표
+    context-pack.md             도메인 팩 양식과 수집 절차
+    diagram.md                  다이어그램 규칙과 삽입 경로
+    confluence.md               게시, 갱신, 충돌 검사, 인라인 댓글
+    writing-style.md            문체와 금지어
+  scripts/
+    lint_spec.py                문체 검사
+    render_diagram.sh           Mermaid → PNG
+    mermaid_macro.py            Mermaid 블록 HTML 생성
+    confluence_attach.sh        첨부 업로드 (본인 토큰)
+    md_to_confluence.py         마크다운 → Confluence HTML
 ```
-
-- `docs/PRODUCT_SPEC.md`가 없으면 → 신규 생성
-- `docs/PRODUCT_SPEC.md`가 있으면 → 변경 섹션만 수정
 
 ## 업데이트
 
-스킬 실행 시 자동으로 최신 버전을 체크합니다. 업데이트가 있으면 안내가 표시됩니다.
+실행 시 원격 버전을 확인해 다르면 안내한다. "스킬 업데이트해줘"라고 하면 `SKILL.md`의 `skill-files` 목록 전체를 내려받아 갱신한다
