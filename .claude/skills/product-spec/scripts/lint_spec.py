@@ -31,7 +31,7 @@ JARGON_AFTER = r"(?=$|[\s)\]\(\|,.:;/'\"]|은|는|이|가|을|를|의|로|에|�
 JARGON_RX = {w: re.compile(BEFORE + re.escape(w) + JARGON_AFTER) for w in JARGON}
 # 문서 안에서 행 번호로 다른 곳을 가리키면 행이 늘 때 전부 어긋남. 화면 이름으로 가리킴
 # "구현 상세 14행", "15행 10번", "11행의", "9행 참고"처럼 가리킬 때만. "최대 2행", "2행 3열"은 통과
-ROWREF = re.compile(r"(?:구현 상세|표)\s*\d+\s*행|\d+\s*행\s*(?:\d+\s*번|참고|의\b|에서|처럼)")
+ROWREF = re.compile(r"(?:구현 상세|표의)\s*\d+\s*행|\d+\s*행\s*(?:\d+\s*번|참고|의\b|에서|처럼)|\d+\s*번\s*행|\b\d+-\d+의\s")
 LABEL = re.compile(r"맥락\s*:")
 EMOJI = re.compile("[\U0001F300-\U0001FAFF⌀-⏿☀-➿⬀-⯿]")
 ALLOWED_EMOJI = {"⚠", "\U0001F4D8", "✓", "✔"}  # ⚠ 📘 ✓ ✔
@@ -56,8 +56,13 @@ def check(path):
             if line.strip().startswith("```"):
                 in_code = not in_code
                 continue
-            if in_code or "lint-skip" in line:
+            if in_code:
                 continue
+            skip_kinds = None
+            sk = re.search(r"lint-skip(?::\s*([^>]*))?", line)
+            if sk:
+                kinds = [k.strip() for k in re.split(r"[,\s]+", sk.group(1) or "") if k.strip()]
+                skip_kinds = set(kinds) if kinds else set()  # 빈 집합 = 전부 건너뜀
             text = strip(line)
             for sym, name in SYMBOLS.items():
                 if sym in text:
@@ -84,7 +89,29 @@ def check(path):
             for m in EMOJI.finditer(text):
                 if m.group() not in ALLOWED_EMOJI:
                     issues.append((n, "이모지", m.group()))
+            if skip_kinds is not None:
+                issues = [i for i in issues if not (i[0] == n and (not skip_kinds or i[1] in skip_kinds))]
     return issues
+
+
+HEAD = re.compile(r"착수 전 확인 필요\s*(\d+)건,\s*확인 필요 전체\s*(\d+)건")
+
+
+def check_counts(path):
+    """첫 줄 건수와 본문의 ⚠️ 수 대조. 첫 줄 표기가 없으면 검사하지 않음"""
+    text = open(path, encoding="utf-8").read()
+    m = HEAD.search(text)
+    if not m:
+        return []
+    body = text[m.end():]
+    a = body.count("⚠️ 착수 조건")
+    total = body.count("⚠️")
+    out = []
+    if int(m.group(1)) != a:
+        out.append((1, "건수 불일치", f"첫 줄 착수 전 {m.group(1)}건, 본문 '⚠️ 착수 조건' {a}건"))
+    if int(m.group(2)) != total:
+        out.append((1, "건수 불일치", f"첫 줄 전체 {m.group(2)}건, 본문 ⚠️ {total}건"))
+    return out
 
 
 def main():
@@ -93,7 +120,7 @@ def main():
         return 2
     total = 0
     for path in sys.argv[1:]:
-        for n, kind, what in check(path):
+        for n, kind, what in check(path) + check_counts(path):
             print(f"{path}:{n}: {kind}: {what}")
             total += 1
     if total:

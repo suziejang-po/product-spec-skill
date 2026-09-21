@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mermaid_macro import build as build_macro  # noqa: E402
+from mermaid_macro import build as build_macro, quantize_png  # noqa: E402
 
 INLINE_CODE = re.compile(r"`[^`]*`")
 REPLACE = {"·": "/", "—": ", ", "–": ", "}
@@ -81,30 +81,30 @@ class Converter:
                         f'data-width-type="percentage"><div data-type="media" data-media-type="file" '
                         f'data-id="{html.escape(m["mediaId"])}" data-collection="{html.escape(m["collection"])}" '
                         f'data-alt="{html.escape(name)}"></div></figure>')
-            self.notes.append(f"첨부 정보 없음: {name}. 블록으로 대체")
+            self.notes.append(f"첨부 정보 없음: {name} (media.json에 미디어 ID 없음). 블록 또는 안내 상자로 대체. 첨부는 올라가 있으면 편집 화면에서 끌어다 놓아도 됨")
         stem = os.path.splitext(os.path.join(self.base_dir, path))[0]
         mmd, png = stem + ".mmd", stem + "-macro.png"
         if os.path.exists(mmd) and not os.path.exists(png):
             script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "render_diagram.sh")
-            subprocess.run(["bash", script, mmd, png, "macro"], capture_output=True)
+            try:
+                subprocess.run(["bash", script, mmd, png, "macro"], capture_output=True, timeout=120)
+            except subprocess.TimeoutExpired:
+                self.notes.append(f"렌더 시간 초과: {mmd}")
         if os.path.exists(mmd) and os.path.exists(png):
-            data = open(png, "rb").read()
+            data = quantize_png(open(png, "rb").read())
             m_w = int.from_bytes(data[16:20], "big") if len(data) > 24 else 0
             m_h = int.from_bytes(data[20:24], "big") if len(data) > 24 else 0
             b64_len = len(data) * 4 // 3
-            attach = stem + ".png"
-            logical_w = 0
-            if os.path.exists(attach):
-                a = open(attach, "rb").read()
-                logical_w = int.from_bytes(a[16:20], "big") // 2 if len(a) > 24 else 0
-            # 블록은 폭 300px로 표시된다. 가로로 긴 그림(논리 폭 600 초과 또는 블록용 높이 120 미만)은 읽히지 않는다
-            if b64_len > 8 * 1024 or logical_w > 600 or (m_h and m_h < 120) or (m_w and m_h and m_w / m_h > 3):
-                self.notes.append(f"블록 대신 안내 상자: {name} (base64 {b64_len // 1024}KB, 논리 폭 {logical_w}px, 블록 {m_w}x{m_h}). 편집 → /mermaid → {os.path.relpath(mmd, self.base_dir)} 붙여넣기")
-                return (f'<div data-type="panel-info"><p>사용자 흐름도 자리. 편집 화면에서 /mermaid 를 넣고 '
+            kind = open(mmd, encoding="utf-8").readline().strip().split()[0] if os.path.exists(mmd) else "flowchart"
+            label = {"flowchart": "흐름도", "graph": "흐름도", "stateDiagram-v2": "상태도", "stateDiagram": "상태도", "sequenceDiagram": "순서도"}.get(kind, "다이어그램")
+            # 블록은 폭 300px로 표시된다. 블록용 그림이 납작하거나(높이 120 미만, 가로세로비 2.5 초과) 크면(8KB 초과) 읽히지 않는다
+            if b64_len > 8 * 1024 or (m_h and m_h < 120) or (m_w and m_h and m_w / m_h > 2.5):
+                self.notes.append(f"블록 대신 안내 상자: {name} (base64 {b64_len // 1024}KB, 블록 {m_w}x{m_h}). 편집 → /mermaid → {os.path.relpath(mmd, self.base_dir)} 붙여넣기")
+                return (f'<div data-type="panel-info"><p>{label} 자리. 편집 화면에서 /mermaid 를 넣고 '
                         f'{html.escape(os.path.relpath(mmd, self.base_dir))} 의 코드를 붙여넣어 주세요. 그림 파일 {html.escape(path)}</p></div>')
             return build_macro(open(mmd, encoding="utf-8").read().strip(), data)
         self.notes.append(f"그림 파일 없음: {mmd} 또는 {png}")
-        return f'<div data-type="panel-warning"><p>다이어그램 파일 없음: {html.escape(path)}. 스펙 폴더의 diagrams에서 그림을 끌어다 놓아 주세요</p></div>'
+        return f'<div data-type="panel-warning"><p>다이어그램 파일 없음: {html.escape(path)}. 스펙 폴더의 diagrams에서 그림을 만들어 끌어다 놓아 주세요</p></div>'
 
     def table(self, rows):
         header, body = rows[0], rows[2:]

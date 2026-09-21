@@ -50,5 +50,6 @@ if "id" not in d:
     print("업로드 실패: " + json.dumps(d, ensure_ascii=False)[:300], file=sys.stderr); sys.exit(1)
 ext = d.get("extensions", {})
 media = ext.get("fileId") or ext.get("mediaId") or ""
-print(json.dumps({"mediaId": media, "collection": f"contentId-{page}", "filename": d.get("title", ""), "attachmentId": d["id"]}, ensure_ascii=False))
+collection = ext.get("collectionName") or f"contentId-{page}"
+print(json.dumps({"mediaId": media, "collection": collection, "filename": d.get("title", ""), "attachmentId": d["id"]}, ensure_ascii=False))
 ' "$PAGE"

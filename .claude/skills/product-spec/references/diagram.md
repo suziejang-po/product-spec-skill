@@ -1,6 +1,6 @@
 # 다이어그램
 
-스펙에는 Mermaid 코드가 아니라 그림이 들어간다. 코드는 `docs/diagrams/{이름}.mmd`에 보관하고 수정 시 재렌더한다
+스펙에는 Mermaid 코드가 아니라 그림이 들어간다. 코드는 `{스펙 폴더}/diagrams/{이름}.mmd`에 보관하고 수정 시 재렌더한다
 
 ## 언제 어떤 그림을 그리나
 
@@ -47,7 +47,7 @@ bash {SKILL_DIR}/scripts/render_diagram.sh diagrams/flow.mmd diagrams/flow-macro
 3. 결과를 `media.json`에 모음. 형식: `{"{이름}.png": {"mediaId": "...", "collection": "contentId-<pageId>"}}`
 4. `python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --media-json media.json --out body.html`. 변환기가 그림 자리에 `<figure data-type="media-single" ...>`를 넣음
 5. `updateConfluencePage`로 본문 갱신 (재읽기와 버전 검증은 confluence.md)
-6. mediaId가 비어 있으면 변환기가 그 그림만 블록으로 대체하고 표준 오류에 알림. 안내: "첨부는 올라갔지만 본문 삽입에 필요한 미디어 ID를 받지 못해 블록으로 넣었습니다. 페이지 편집에서 첨부 파일을 끌어다 놓으면 크게 볼 수 있습니다"
+6. mediaId가 비어 있으면 변환기가 그 그림만 블록 또는 안내 상자로 대체하고 표준 오류에 알림. 안내: "첨부는 올라갔지만 본문 삽입에 필요한 미디어 ID를 받지 못했습니다. 페이지 편집에서 첨부 파일을 끌어다 놓으면 크게 볼 수 있습니다"
 
 같은 이름의 파일이 이미 있으면 스크립트가 새 버전으로 올림
 
@@ -55,7 +55,7 @@ bash {SKILL_DIR}/scripts/render_diagram.sh diagrams/flow.mmd diagrams/flow-macro
 
 Mermaid Chart 앱 매크로. 코드와 PNG를 함께 넣어야 보기 화면에 그림이 뜬다 (코드만 넣으면 빈칸)
 
-변환기가 `--diagram-mode macro`일 때 `{이름}.mmd`와 `{이름}-macro.png`로 블록을 만들어 그림 자리에 넣는다. 단 변환기는 PNG의 base64가 8KB를 넘거나 논리 폭(픽셀 폭 ÷ 2)이 600px을 넘으면 블록 대신 안내 상자(편집 → /mermaid → 코드 붙여넣기)를 넣고 표준 오류에 알린다. 가로형 흐름도는 대부분 이 조건에 걸리므로 블록 경로의 기본 결과는 안내 상자다
+변환기가 `--diagram-mode macro`일 때 `{이름}.mmd`와 `{이름}-macro.png`로 블록을 만들어 그림 자리에 넣는다. 단 변환기는 블록용 PNG가 납작하거나(높이 120px 미만 또는 가로세로비 2.5 초과) 크면(base64 8KB 초과) 블록 대신 안내 상자(편집 → /mermaid → 코드 붙여넣기)를 넣고 표준 오류에 알린다. 가로형 흐름도는 대개 납작해서 안내 상자가 되고, 세로형 상태도와 순서도는 블록으로 들어간다
 
 - 본문 크기 규칙: 변환기가 표준 오류로 알려 주는 본문 크기가 40KB를 넘으면, 첫 번째 그림만 블록으로 넣고 나머지 그림 자리에는 `⚠️ 그림은 {스펙 폴더}/diagrams/{이름}.png를 페이지에 끌어다 놓아 주세요`를 쓴다. 본문을 MCP 도구 인자로 옮길 때 잘림을 막기 위한 규칙
 - 2026-09-18 실측: MCP 도구 인자에 base64를 넣으면 약 12KB 지점에서 잘려 HTML이 깨졌다(본문 크기와 무관). 블록 경로는 PNG base64가 8KB 이하일 때만 시도하고, 넘으면 그림 자리에 `<div data-type="panel-info">` 안내(편집 → /mermaid → 코드 붙여넣기, 코드 경로 명시)를 넣고 게시 안내에 그 사실을 적는다. 편집기 자동 조작으로 블록을 넣는 방법은 문서를 망칠 위험이 있어 쓰지 않는다
