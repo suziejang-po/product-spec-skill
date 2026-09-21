@@ -1,6 +1,6 @@
 ---
 name: product-spec
-skill-version: "4.0.0"
+skill-version: "4.0.1"
 skill-repo: suziejang-po/product-spec-skill
 skill-files:
   - SKILL.md
@@ -62,7 +62,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 
 1. 레포 스캔: `README.md`, `CLAUDE.md`, 매니페스트, 라우트와 컴포넌트 폴더, 배포 설정, `docs/`. git log는 변경 범위 파악에만 쓰고 서사를 만들지 않음
 2. 첨부 자료와 대화 내용. 자료에 적힌 Confluence 페이지 ID와 링크는 전부 뽑아 둔다
-3. 도메인 팩: `docs/spec-context.md`가 있으면 읽고 갱신일을 확인. 없거나 오래됐으면 `references/context-pack.md`의 자동 조회(Confluence 검색, asp MCP, Amplitude 택소노미)를 먼저 하고, 도구로 못 채운 항목만 묻는다(최대 5개). 채워진 항목이 없으면 저장하지 않는다. 이 단계는 Phase 3의 질문 횟수에 세지 않음
+3. 도메인 팩: `docs/spec-context.md`가 있으면 읽고 갱신일을 확인. 없거나 오래됐으면 `references/context-pack.md`의 자동 조회(Confluence 검색, asp MCP, Amplitude 택소노미)를 먼저 하고, 도구로 못 채운 항목만 묻는다(최대 5개: 화면, 메뉴 경로, 메뉴의 용도, 참고 문서, 용어). 작성자에게 API나 이벤트명을 묻지 않는다. 채워진 항목이 없으면 저장하지 않는다. 이 단계는 Phase 3의 질문 횟수에 세지 않음
 4. 문서 유형 판별: New Product(새 서비스), Feature(기존 서비스에 새 기능), Enhancement(기존 기능 개선), 실험(A/B 테스트. Feature 규칙에 실험 설계 표를 더함). 모호하면 Feature. 판별 결과를 초안 첫 줄에 한 단어로 적고 작성자가 바꿀 수 있게 한다
 5. 코드 식별자 확인: 초안에 쓸 이벤트명은 Amplitude 택소노미로, API는 asp로 존재 여부 확인 (원칙 3의 표기)
 
