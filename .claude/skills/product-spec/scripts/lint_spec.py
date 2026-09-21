@@ -13,6 +13,25 @@ BEFORE = r"(?:^|(?<=[\s(\[\|>,.:;/'\"]))"
 AFTER = r"(?=$|[\s)\]\|,.:;/'\"]|은|는|이|가|을|를|의|로|에|와|과|도|만|사항)"
 BANNED = {w: re.compile(BEFORE + re.escape(w) + AFTER) for w in BANNED_WORDS}
 ENDING = re.compile(r"[가-힣]습니다")
+# 은어: 사람이 쓰는 스펙에 나오지 않는 말. 값은 대체 표현
+JARGON = {
+    "전이": "상태가 바뀌는 때",
+    "맥락": "기준이 되는 것을 직접 씀",
+    "액션": "동작",
+    "옵트인": "공개 동의",
+    "인터페이스": "넘기는 방법",
+    "필드": "항목",
+    "카운터": "세기",
+    "플래그": "표시",
+    "스냅샷": "그 시점 값을 따로 저장",
+    "마이그레이션": "데이터 이관",
+    "엣지 케이스": "드문 경우",
+    "밸리데이션": "검사",
+}
+JARGON_AFTER = r"(?=$|[\s)\]\(\|,.:;/'\"]|은|는|이|가|을|를|의|로|에|와|과|도|만|별|적|화)"
+JARGON_RX = {w: re.compile(BEFORE + re.escape(w) + JARGON_AFTER) for w in JARGON}
+# 문서 안에서 행 번호로 다른 곳을 가리키면 행이 늘 때 전부 어긋남. 화면 이름으로 가리킴
+ROWREF = re.compile(r"\d+\s*행")
 LABEL = re.compile(r"맥락\s*:")
 EMOJI = re.compile("[\U0001F300-\U0001FAFF⌀-⏿☀-➿⬀-⯿]")
 ALLOWED_EMOJI = {"⚠", "\U0001F4D8"}  # ⚠ 📘
@@ -51,6 +70,12 @@ def check(path):
                     issues.append((n, "금지어", w))
             if ENDING.search(text):
                 issues.append((n, "습니다체", ENDING.search(text).group()))
+            for w, rx in JARGON_RX.items():
+                if rx.search(text):
+                    issues.append((n, "은어", f"{w} → {JARGON[w]}"))
+            m = ROWREF.search(text)
+            if m:
+                issues.append((n, "행 번호 참조", f"{m.group()} → 화면 이름으로 가리킴"))
             if LABEL.search(text):
                 issues.append((n, "라벨", "맥락:"))
             for m in EMOJI.finditer(text):
