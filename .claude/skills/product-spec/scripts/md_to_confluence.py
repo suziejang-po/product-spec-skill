@@ -88,7 +88,21 @@ class Converter:
             script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "render_diagram.sh")
             subprocess.run(["bash", script, mmd, png, "macro"], capture_output=True)
         if os.path.exists(mmd) and os.path.exists(png):
-            return build_macro(open(mmd, encoding="utf-8").read().strip(), open(png, "rb").read())
+            data = open(png, "rb").read()
+            m_w = int.from_bytes(data[16:20], "big") if len(data) > 24 else 0
+            m_h = int.from_bytes(data[20:24], "big") if len(data) > 24 else 0
+            b64_len = len(data) * 4 // 3
+            attach = stem + ".png"
+            logical_w = 0
+            if os.path.exists(attach):
+                a = open(attach, "rb").read()
+                logical_w = int.from_bytes(a[16:20], "big") // 2 if len(a) > 24 else 0
+            # 블록은 폭 300px로 표시된다. 가로로 긴 그림(논리 폭 600 초과 또는 블록용 높이 120 미만)은 읽히지 않는다
+            if b64_len > 8 * 1024 or logical_w > 600 or (m_h and m_h < 120) or (m_w and m_h and m_w / m_h > 3):
+                self.notes.append(f"블록 대신 안내 상자: {name} (base64 {b64_len // 1024}KB, 논리 폭 {logical_w}px, 블록 {m_w}x{m_h}). 편집 → /mermaid → {os.path.relpath(mmd, self.base_dir)} 붙여넣기")
+                return (f'<div data-type="panel-info"><p>사용자 흐름도 자리. 편집 화면에서 /mermaid 를 넣고 '
+                        f'{html.escape(os.path.relpath(mmd, self.base_dir))} 의 코드를 붙여넣어 주세요. 그림 파일 {html.escape(path)}</p></div>')
+            return build_macro(open(mmd, encoding="utf-8").read().strip(), data)
         self.notes.append(f"그림 파일 없음: {mmd} 또는 {png}")
         return f'<div data-type="panel-warning"><p>다이어그램 파일 없음: {html.escape(path)}. 스펙 폴더의 diagrams에서 그림을 끌어다 놓아 주세요</p></div>'
 

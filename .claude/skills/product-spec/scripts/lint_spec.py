@@ -16,25 +16,25 @@ ENDING = re.compile(r"[가-힣]습니다")
 # 은어: 사람이 쓰는 스펙에 나오지 않는 말. 값은 대체 표현
 JARGON = {
     "전이": "상태가 바뀌는 때",
-    "맥락": "기준이 되는 것을 직접 씀",
     "액션": "동작",
-    "옵트인": "공개 동의",
     "인터페이스": "넘기는 방법",
-    "필드": "항목",
     "카운터": "세기",
     "플래그": "표시",
     "스냅샷": "그 시점 값을 따로 저장",
     "마이그레이션": "데이터 이관",
     "엣지 케이스": "드문 경우",
     "밸리데이션": "검사",
+    "큐": "대기 목록",
 }
+JARGON_EXCEPT = ["액션 시트"]  # 실제 컴포넌트 이름
 JARGON_AFTER = r"(?=$|[\s)\]\(\|,.:;/'\"]|은|는|이|가|을|를|의|로|에|와|과|도|만|별|적|화)"
 JARGON_RX = {w: re.compile(BEFORE + re.escape(w) + JARGON_AFTER) for w in JARGON}
 # 문서 안에서 행 번호로 다른 곳을 가리키면 행이 늘 때 전부 어긋남. 화면 이름으로 가리킴
-ROWREF = re.compile(r"\d+\s*행")
+# "구현 상세 14행", "15행 10번", "11행의", "9행 참고"처럼 가리킬 때만. "최대 2행", "2행 3열"은 통과
+ROWREF = re.compile(r"(?:구현 상세|표)\s*\d+\s*행|\d+\s*행\s*(?:\d+\s*번|참고|의\b|에서|처럼)")
 LABEL = re.compile(r"맥락\s*:")
 EMOJI = re.compile("[\U0001F300-\U0001FAFF⌀-⏿☀-➿⬀-⯿]")
-ALLOWED_EMOJI = {"⚠", "\U0001F4D8"}  # ⚠ 📘
+ALLOWED_EMOJI = {"⚠", "\U0001F4D8", "✓", "✔"}  # ⚠ 📘 ✓ ✔
 URL = re.compile(r"https?://\S+")
 INLINE_CODE = re.compile(r"`[^`]*`")
 QUOTED = re.compile(r"'[^']{1,80}'|\"[^\"]{1,160}\"")
@@ -70,8 +70,11 @@ def check(path):
                     issues.append((n, "금지어", w))
             if ENDING.search(text):
                 issues.append((n, "습니다체", ENDING.search(text).group()))
+            jtext = text
+            for ex in JARGON_EXCEPT:
+                jtext = jtext.replace(ex, "")
             for w, rx in JARGON_RX.items():
-                if rx.search(text):
+                if rx.search(jtext):
                     issues.append((n, "은어", f"{w} → {JARGON[w]}"))
             m = ROWREF.search(text)
             if m:
