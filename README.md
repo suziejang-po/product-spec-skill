@@ -2,6 +2,10 @@
 
 Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬. 원본 레포를 포크해 v4로 재구성
 
+## 출처
+
+사내 Confluence의 Product Spec Claude Skill 문서와 원본 레포(포크 출처)를 기반으로 발전시켰다
+
 ## 무엇이 달라졌나
 
 - 출처 있는 내용만 쓴다. 코드, 첨부 자료, 대화, 기존 문서에 없는 도메인 서술은 빈칸으로 두고 질문한다
