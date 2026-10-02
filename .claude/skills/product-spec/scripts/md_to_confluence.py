@@ -76,6 +76,12 @@ class Converter:
         name = os.path.basename(path)
         if self.mode == "attach":
             m = self.media.get(name) or self.media.get(path)
+            # storage 형식으로 올릴 때는 figure media-single이 저장되지 않고 그림이 사라짐.
+            # media.json에 filename(첨부 파일명)이 있으면 storage용 ac:image로 내보냄
+            if m and m.get("filename"):
+                return (f'<p><ac:image ac:align="center" ac:layout="center" ac:custom-width="true" '
+                        f'ac:width="760" ac:alt="{html.escape(alt or name)}">'
+                        f'<ri:attachment ri:filename="{html.escape(m["filename"])}" /></ac:image></p>')
             if m and m.get("mediaId"):
                 return (f'<figure data-type="media-single" data-layout="center" data-width="80" '
                         f'data-width-type="percentage"><div data-type="media" data-media-type="file" '
