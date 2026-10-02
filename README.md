@@ -4,7 +4,10 @@ Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬.
 
 ## 출처
 
-사내 Confluence의 Product Spec Claude Skill 문서와 원본 레포(포크 출처)를 기반으로 발전시켰다
+아래 두 가지를 기반으로 발전시켰다
+
+- 기존 스펙 문서: [Product Spec Claude Skill](https://wantedlab.atlassian.net/wiki/spaces/~71202040d3ee88a99a4ff7a2114eff1430dbd8/pages/4777082907/Product+Spec+Claude+Skill) (사내 Confluence, 원티드 계정 로그인 필요)
+- 원본 레포: [hyeongkeunpark-bit/product-spec-skill](https://github.com/hyeongkeunpark-bit/product-spec-skill)
 
 ## 변경사항
 
