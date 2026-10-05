@@ -19,7 +19,8 @@ from mermaid_macro import build as build_macro, quantize_png  # noqa: E402
 INLINE_CODE = re.compile(r"`[^`]*`")
 REPLACE = {"·": "/", "—": ", ", "–": ", "}
 CIRCLED = {chr(0x2460 + i): f"{i + 1}." for i in range(20)}
-TABLE_WIDTH = 760
+TABLE_WIDTH = 1800
+MIN_COL = 100
 NUM_COL = 40
 
 
@@ -115,27 +116,69 @@ class Converter:
     def table(self, rows):
         header, body = rows[0], rows[2:]
         ncol = len(header)
-        numbered = header[0].strip() == "#"
-        widths = None
-        if numbered:
-            names = [h.strip() for h in header]
-            if names == ["#", "진입점", "화면", "기능", "요구사항"]:
-                widths = [NUM_COL, 140, 140, 120, TABLE_WIDTH - NUM_COL - 400]
-            else:
-                rest = (TABLE_WIDTH - NUM_COL) // max(ncol - 1, 1)
-                widths = [NUM_COL] + [rest] * (ncol - 1)
-        attrs = ' data-display-mode="fixed"' if numbered else ""
-        out = [f"<table{attrs}><thead><tr>"]
+        names = [h.strip() for h in header]
+        numbered = names[0] == "#"
+
+        def plain(x):
+            x = re.sub(r"<br\s*/?>", " ", x or "")
+            return re.sub(r"[*`\[\]()]", "", x).strip()
+
+        def weight(x):
+            # 한글은 영문보다 넓게 차지하므로 1.8배로 센다
+            t = plain(x)
+            wide = sum(1 for ch in t if ord(ch) > 0x1100)
+            return wide * 1.8 + (len(t) - wide)
+
+        # 구현 상세 표는 요구사항 셀이 압도적으로 길어 비례 배분이 무너지므로 고정값을 쓴다
+        if numbered and names == ["#", "진입점", "화면", "기능", "요구사항"]:
+            fixed = [NUM_COL, 210, 200, 170]
+            widths = fixed + [TABLE_WIDTH - sum(fixed)]
+        else:
+            reps, caps = [], []
+            for i in range(ncol):
+                cells = [(r + [""] * ncol)[i] for r in body]
+                filled = [weight(c) for c in cells if plain(c)]
+                avg = sum(filled) / len(filled) if filled else 0
+                reps.append(max(avg, weight(header[i]) * 1.2, 1))
+                # 그 열에서 가장 긴 글자보다 넓어지지 않게 상한을 둔다
+                longest = max([weight(c) for c in cells] + [weight(header[i])])
+                caps.append(max(MIN_COL, round(longest * 9 + 40)))
+            pool = TABLE_WIDTH - (NUM_COL if numbered else 0)
+            idx = [i for i in range(ncol) if not (numbered and i == 0)]
+            widths = [NUM_COL if (numbered and i == 0) else 0 for i in range(ncol)]
+            # 상한과 하한에 걸린 열을 고정하고, 남은 폭을 나머지 열에 길이 비례로 다시 나눈다
+            free, remain = list(idx), pool
+            for _ in range(6):
+                total = sum(reps[i] for i in free) or 1
+                done = []
+                for i in free:
+                    w = round(remain * reps[i] / total)
+                    if w > caps[i]:
+                        widths[i] = caps[i]; done.append(i)
+                    elif w < MIN_COL:
+                        widths[i] = MIN_COL; done.append(i)
+                if not done:
+                    for i in free:
+                        widths[i] = round(remain * reps[i] / total)
+                    break
+                remain -= sum(widths[i] for i in done)
+                free = [i for i in free if i not in done]
+                if not free:
+                    break
+            # Confluence는 열 폭을 비율로 쓴다. 합을 억지로 맞추지 않고 상한을 지킨다
+
+        attrs = ' data-layout="full-width" data-display-mode="fixed"'
+        # storage 형식은 data-colwidth를 무시한다. 실제 폭은 colgroup으로 넣어야 적용된다
+        cols = "".join(f'<col style="width: {w}.0px;" />' for w in widths)
+        out = [f"<table{attrs}><colgroup>{cols}</colgroup><thead><tr>"]
         for i, c in enumerate(header):
-            w = f' data-colwidth="{widths[i]}"' if widths else ""
-            out.append(f"<th{w}><p>{inline(c.strip())}</p></th>")
+            out.append(f'<th data-colwidth="{widths[i]}"><p>{inline(c.strip())}</p></th>')
         out.append("</tr></thead><tbody>")
         for r in body:
             r = (r + [""] * ncol)[:ncol]
             out.append("<tr>")
             for i, c in enumerate(r):
-                w = f' data-colwidth="{widths[i]}"' if widths else ""
-                out.append(f"<td{w}><p>{inline(c.strip())}</p></td>")
+                out.append(f'<td data-colwidth="{widths[i]}"><p>{inline(c.strip())}</p></td>')
             out.append("</tr>")
         out.append("</tbody></table>")
         return "".join(out)
