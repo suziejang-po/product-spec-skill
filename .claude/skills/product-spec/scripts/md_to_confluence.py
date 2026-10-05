@@ -48,6 +48,42 @@ def inline(text):
     return "".join(out)
 
 
+def cell_html(text):
+    """셀 안 위계를 살린다. `1.`은 단락, `- `는 불릿, `  - `는 안쪽 불릿"""
+    parts = [p for p in re.split(r"<br\s*/?>", text or "") if p.strip()]
+    if not parts:
+        return "<p></p>"
+    out, stack = [], 0
+
+    def close_to(target):
+        nonlocal stack
+        while stack > target:
+            out.append("</ul>")
+            stack -= 1
+            if stack > 0:
+                out.append("</li>")
+
+    for raw in parts:
+        m = re.match(r"^(\s*)-\s+(.*)$", raw)
+        depth = (2 if len(m.group(1)) >= 2 else 1) if m else 0
+        body = m.group(2) if m else raw.strip()
+        if depth > stack:
+            while depth > stack:
+                if stack > 0 and out and out[-1] == "</li>":
+                    out.pop()          # 부모 항목 안에 중첩한다
+                out.append("<ul>")
+                stack += 1
+        elif depth < stack:
+            close_to(depth)
+        if depth == 0:
+            out.append(f"<p>{inline(body)}</p>")
+        else:
+            out.append(f"<li><p>{inline(body)}</p>")
+            out.append("</li>")
+    close_to(0)
+    return "".join(out)
+
+
 def split_cells(row):
     """| a | `x|y` | c \\| d | → 인라인 코드 안의 |와 이스케이프된 \\|는 구분자로 보지 않음"""
     protected = []
@@ -184,7 +220,7 @@ class Converter:
             r = (r + [""] * ncol)[:ncol]
             out.append("<tr>")
             for i, c in enumerate(r):
-                out.append(f'<td data-colwidth="{widths[i]}"><p>{inline(c.strip())}</p></td>')
+                out.append(f'<td data-colwidth="{widths[i]}">{cell_html(c.strip())}</td>')
             out.append("</tr>")
         out.append("</tbody></table>")
         return "".join(out)
