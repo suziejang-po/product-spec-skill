@@ -143,7 +143,10 @@ class Converter:
                 # 그 열에서 가장 긴 글자보다 넓어지지 않게 상한을 둔다
                 longest = max([weight(c) for c in cells] + [weight(header[i])])
                 caps.append(max(MIN_COL, round(longest * 9 + 40)))
-            pool = TABLE_WIDTH - (NUM_COL if numbered else 0)
+            # 표가 실제로 필요한 폭. 이보다 넓히면 오른쪽이 비어 보인다
+            need = sum(caps) + (NUM_COL if numbered else 0)
+            target = min(TABLE_WIDTH, max(need, 320))
+            pool = target - (NUM_COL if numbered else 0)
             idx = [i for i in range(ncol) if not (numbered and i == 0)]
             widths = [NUM_COL if (numbered and i == 0) else 0 for i in range(ncol)]
             # 상한과 하한에 걸린 열을 고정하고, 남은 폭을 나머지 열에 길이 비례로 다시 나눈다
@@ -167,7 +170,14 @@ class Converter:
                     break
             # Confluence는 열 폭을 비율로 쓴다. 합을 억지로 맞추지 않고 상한을 지킨다
 
-        attrs = ' data-layout="full-width" data-display-mode="fixed"'
+        total_w = sum(widths)
+        if total_w <= 760:
+            layout = "default"
+        elif total_w <= 1100:
+            layout = "wide"
+        else:
+            layout = "full-width"
+        attrs = f' data-layout="{layout}" data-display-mode="fixed"'
         # storage 형식은 data-colwidth를 무시한다. 실제 폭은 colgroup으로 넣어야 적용된다
         cols = "".join(f'<col style="width: {w}.0px;" />' for w in widths)
         out = [f"<table{attrs}><colgroup>{cols}</colgroup><thead><tr>"]
