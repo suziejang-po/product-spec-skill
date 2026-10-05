@@ -1,6 +1,6 @@
 ---
 name: product-spec
-skill-version: "4.1.2"
+skill-version: "4.1.3"
 skill-repo: suziejang-po/product-spec-skill
 skill-files:
   - SKILL.md

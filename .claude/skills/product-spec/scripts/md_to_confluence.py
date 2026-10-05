@@ -19,7 +19,8 @@ from mermaid_macro import build as build_macro, quantize_png  # noqa: E402
 INLINE_CODE = re.compile(r"`[^`]*`")
 REPLACE = {"·": "/", "—": ", ", "–": ", "}
 CIRCLED = {chr(0x2460 + i): f"{i + 1}." for i in range(20)}
-TABLE_WIDTH = 760
+TABLE_WIDTH = 1800
+MIN_COL = 100
 NUM_COL = 40
 
 
@@ -44,6 +45,42 @@ def inline(text):
         p = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", p)
         p = re.sub(r"\[([^\]]+)\]\((https?://(?:[^()\s]|\([^()\s]*\))+)\)", r'<a href="\2">\1</a>', p)
         out.append(p)
+    return "".join(out)
+
+
+def cell_html(text):
+    """셀 안 위계를 살린다. `1.`은 단락, `- `는 불릿, `  - `는 안쪽 불릿"""
+    parts = [p for p in re.split(r"<br\s*/?>", text or "") if p.strip()]
+    if not parts:
+        return "<p></p>"
+    out, stack = [], 0
+
+    def close_to(target):
+        nonlocal stack
+        while stack > target:
+            out.append("</ul>")
+            stack -= 1
+            if stack > 0:
+                out.append("</li>")
+
+    for raw in parts:
+        m = re.match(r"^(\s*)-\s+(.*)$", raw)
+        depth = (2 if len(m.group(1)) >= 2 else 1) if m else 0
+        body = m.group(2) if m else raw.strip()
+        if depth > stack:
+            while depth > stack:
+                if stack > 0 and out and out[-1] == "</li>":
+                    out.pop()          # 부모 항목 안에 중첩한다
+                out.append("<ul>")
+                stack += 1
+        elif depth < stack:
+            close_to(depth)
+        if depth == 0:
+            out.append(f"<p>{inline(body)}</p>")
+        else:
+            out.append(f"<li><p>{inline(body)}</p>")
+            out.append("</li>")
+    close_to(0)
     return "".join(out)
 
 
@@ -115,27 +152,75 @@ class Converter:
     def table(self, rows):
         header, body = rows[0], rows[2:]
         ncol = len(header)
-        numbered = header[0].strip() == "#"
-        widths = None
-        if numbered:
-            names = [h.strip() for h in header]
-            if names == ["#", "진입점", "화면", "기능", "요구사항"]:
-                widths = [NUM_COL, 140, 140, 120, TABLE_WIDTH - NUM_COL - 400]
-            else:
-                rest = (TABLE_WIDTH - NUM_COL) // max(ncol - 1, 1)
-                widths = [NUM_COL] + [rest] * (ncol - 1)
-        attrs = ' data-display-mode="fixed"' if numbered else ""
-        out = [f"<table{attrs}><thead><tr>"]
+        names = [h.strip() for h in header]
+        numbered = names[0] == "#"
+
+        def plain(x):
+            x = re.sub(r"<br\s*/?>", " ", x or "")
+            return re.sub(r"[*`\[\]()]", "", x).strip()
+
+        def weight(x):
+            # 한글은 영문보다 넓게 차지하므로 1.8배로 센다
+            t = plain(x)
+            wide = sum(1 for ch in t if ord(ch) > 0x1100)
+            return wide * 1.8 + (len(t) - wide)
+
+        # 구현 상세 표는 요구사항 셀이 압도적으로 길어 비례 배분이 무너지므로 고정값을 쓴다
+        if numbered and names == ["#", "진입점", "화면", "기능", "요구사항"]:
+            fixed = [NUM_COL, 210, 200, 170]
+            widths = fixed + [TABLE_WIDTH - sum(fixed)]
+        else:
+            reps, caps = [], []
+            for i in range(ncol):
+                cells = [(r + [""] * ncol)[i] for r in body]
+                filled = [weight(c) for c in cells if plain(c)]
+                avg = sum(filled) / len(filled) if filled else 0
+                reps.append(max(avg, weight(header[i]) * 1.2, 1))
+                # 그 열에서 가장 긴 글자보다 넓어지지 않게 상한을 둔다
+                longest = max([weight(c) for c in cells] + [weight(header[i])])
+                caps.append(max(MIN_COL, round(longest * 9 + 40)))
+            # 표가 실제로 필요한 폭. 이보다 넓히면 오른쪽이 비어 보인다
+            need = sum(caps) + (NUM_COL if numbered else 0)
+            target = min(TABLE_WIDTH, max(need, 320))
+            pool = target - (NUM_COL if numbered else 0)
+            idx = [i for i in range(ncol) if not (numbered and i == 0)]
+            widths = [NUM_COL if (numbered and i == 0) else 0 for i in range(ncol)]
+            # 상한과 하한에 걸린 열을 고정하고, 남은 폭을 나머지 열에 길이 비례로 다시 나눈다
+            free, remain = list(idx), pool
+            for _ in range(6):
+                total = sum(reps[i] for i in free) or 1
+                done = []
+                for i in free:
+                    w = round(remain * reps[i] / total)
+                    if w > caps[i]:
+                        widths[i] = caps[i]; done.append(i)
+                    elif w < MIN_COL:
+                        widths[i] = MIN_COL; done.append(i)
+                if not done:
+                    for i in free:
+                        widths[i] = round(remain * reps[i] / total)
+                    break
+                remain -= sum(widths[i] for i in done)
+                free = [i for i in free if i not in done]
+                if not free:
+                    break
+            # Confluence는 열 폭을 비율로 쓴다. 합을 억지로 맞추지 않고 상한을 지킨다
+
+        # 본문이 왼쪽 정렬이므로 표도 왼쪽에서 시작해야 한다.
+        # default와 wide는 가운데 배치라 좁은 표가 중앙에 떠 보인다
+        layout = "full-width" if sum(widths) > 1100 else "align-start"
+        attrs = f' data-layout="{layout}" data-display-mode="fixed"'
+        # storage 형식은 data-colwidth를 무시한다. 실제 폭은 colgroup으로 넣어야 적용된다
+        cols = "".join(f'<col style="width: {w}.0px;" />' for w in widths)
+        out = [f"<table{attrs}><colgroup>{cols}</colgroup><thead><tr>"]
         for i, c in enumerate(header):
-            w = f' data-colwidth="{widths[i]}"' if widths else ""
-            out.append(f"<th{w}><p>{inline(c.strip())}</p></th>")
+            out.append(f'<th data-colwidth="{widths[i]}"><p>{inline(c.strip())}</p></th>')
         out.append("</tr></thead><tbody>")
         for r in body:
             r = (r + [""] * ncol)[:ncol]
             out.append("<tr>")
             for i, c in enumerate(r):
-                w = f' data-colwidth="{widths[i]}"' if widths else ""
-                out.append(f"<td{w}><p>{inline(c.strip())}</p></td>")
+                out.append(f'<td data-colwidth="{widths[i]}">{cell_html(c.strip())}</td>')
             out.append("</tr>")
         out.append("</tbody></table>")
         return "".join(out)

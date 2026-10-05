@@ -15,7 +15,12 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode macro --out body.html
 ```
 
-- `contentFormat`는 `html`. 변환기가 금지 기호를 치환하고, 표 첫 열이 `#`이면 열 폭을 고정해 번호 열을 40으로 좁힘
+- `contentFormat`는 `html`. 변환기가 금지 기호를 치환함
+- 열 폭은 내용 길이에 비례해 배분한다. 한글은 영문의 1.8배로 세고, 빈 셀은 평균에서 빼고, 그 열에서 가장 긴 글자보다 넓어지지 않게 상한을 둔다. 상한에 걸린 열을 고정하고 남은 폭을 나머지 열에 다시 나눈다. 구현 상세 5열 표는 요구사항 셀이 압도적으로 길어 비례가 무너지므로 고정값(진입점 210, 화면 200, 기능 170)
+- 표 폭은 그 표가 실제로 필요한 만큼만 쓴다. 내용이 적은 표까지 화면 끝까지 늘리면 오른쪽이 비어 보인다
+- 페이지 자체는 기본 폭으로 둔다. 페이지를 전체 폭으로 바꾸면 본문 영역이 화면 전체가 되어 좁은 표까지 따라 늘어난다(2026-10-06 실측). 넓어야 하는 표만 `full-width`를 주면 그 표만 본문 밖으로 확장된다
+- 필요 폭이 1100을 넘으면 `full-width`, 그 아래면 `align-start`. `default`와 `wide`는 표를 가운데 배치하기 때문에 본문 왼쪽 정렬과 시작선이 어긋나 표만 중앙에 떠 보인다(2026-10-06 실측)
+- **열 폭은 `colgroup`으로 내보내야 적용된다.** storage 형식은 `data-colwidth`를 무시한다(2026-10-06 실측). `<colgroup><col style="width: N.0px;" /></colgroup>`
 - 변환기가 표준 오류로 본문 크기와 알림(첨부 정보 없음, 그림 파일 없음)을 낸다. 알림은 게시 안내에 그대로 붙임
 - 본문 크기가 40KB를 넘으면 `references/diagram.md`의 크기 규칙을 따름
 - 게시 전 lint 통과 필수
