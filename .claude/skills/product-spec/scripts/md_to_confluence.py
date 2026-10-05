@@ -170,13 +170,9 @@ class Converter:
                     break
             # Confluence는 열 폭을 비율로 쓴다. 합을 억지로 맞추지 않고 상한을 지킨다
 
-        total_w = sum(widths)
-        if total_w <= 760:
-            layout = "default"
-        elif total_w <= 1100:
-            layout = "wide"
-        else:
-            layout = "full-width"
+        # 본문이 왼쪽 정렬이므로 표도 왼쪽에서 시작해야 한다.
+        # default와 wide는 가운데 배치라 좁은 표가 중앙에 떠 보인다
+        layout = "full-width" if sum(widths) > 1100 else "align-start"
         attrs = f' data-layout="{layout}" data-display-mode="fixed"'
         # storage 형식은 data-colwidth를 무시한다. 실제 폭은 colgroup으로 넣어야 적용된다
         cols = "".join(f'<col style="width: {w}.0px;" />' for w in widths)
