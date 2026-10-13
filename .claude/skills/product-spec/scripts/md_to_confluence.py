@@ -4,6 +4,8 @@
 - attach: media-json의 {파일명: {"mediaId", "collection"}}로 이미지를 media figure로 넣음
 - macro: 이미지 경로의 .mmd와 -macro.png를 찾아 Mermaid 블록으로 넣음
 - 표의 첫 열이 #이면 열 폭을 고정하고 첫 열을 40으로 좁힘
+- 화면, 진입점, 상세 내용 3열 표(New Product)는 140, 200, 나머지로 고정
+- [글자](#제목)은 같은 페이지 제목으로 가는 링크로 바꿈
 - 변환 직전 금지 기호를 치환"""
 import argparse
 import html
@@ -43,6 +45,8 @@ def inline(text):
         p = re.sub(r"`([^`]+)`", r"<code>\1</code>", p)
         p = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", p)
         p = re.sub(r"\[([^\]]+)\]\((https?://(?:[^()\s]|\([^()\s]*\))+)\)", r'<a href="\2">\1</a>', p)
+        # 문서 안 링크 [순위 표](#순위) → 제목 앵커. Confluence 앵커는 제목의 공백을 하이픈으로 바꾼 값
+        p = re.sub(r"\[([^\]]+)\]\(#([^)]+)\)", lambda m: f'<a href="#{m.group(2).strip().replace(" ", "-")}">{m.group(1)}</a>', p)
         out.append(p)
     return "".join(out)
 
@@ -117,6 +121,10 @@ class Converter:
         ncol = len(header)
         numbered = header[0].strip() == "#"
         widths = None
+        names = [h.strip() for h in header]
+        screen_table = names == ["화면", "진입점", "상세 내용"]
+        if screen_table:
+            widths = [140, 200, TABLE_WIDTH - 340]
         if numbered:
             names = [h.strip() for h in header]
             if names == ["#", "진입점", "화면", "기능", "요구사항"]:
@@ -124,7 +132,7 @@ class Converter:
             else:
                 rest = (TABLE_WIDTH - NUM_COL) // max(ncol - 1, 1)
                 widths = [NUM_COL] + [rest] * (ncol - 1)
-        attrs = ' data-display-mode="fixed"' if numbered else ""
+        attrs = ' data-display-mode="fixed"' if (numbered or screen_table) else ""
         out = [f"<table{attrs}><thead><tr>"]
         for i, c in enumerate(header):
             w = f' data-colwidth="{widths[i]}"' if widths else ""
