@@ -6,6 +6,7 @@
 - 표의 첫 열이 #이면 열 폭을 고정하고 첫 열을 40으로 좁힘
 - 화면, 진입점, 상세 내용 3열 표(New Product)는 140, 200, 나머지로 고정
 - [글자](#제목)은 같은 페이지 제목으로 가는 링크로 바꿈
+- 표 셀 안의 '- ' 줄은 불릿, '  - ' 는 한 단계 아래 불릿, '1. ' 은 번호 목록으로 바꿈
 - 변환 직전 금지 기호를 치환"""
 import argparse
 import html
@@ -67,6 +68,42 @@ def split_cells(row):
         c = re.sub(r"\x00(\d+)\x00", lambda m: protected[int(m.group(1))], c)
         out.append(c)
     return out
+
+
+def cell_html(text):
+    """표 셀 안의 줄(<br>로 나눔)을 블록으로 바꿈.
+    '- ' 로 시작하면 불릿, '  - ' 처럼 들여쓰면 한 단계 아래 불릿, '1. ' 은 번호 목록, 나머지는 문단"""
+    lines = [x for x in re.split(r"<br\s*/?>", text)]
+    if len(lines) == 1 and not re.match(r"^\s*(-|\d+\.)\s", lines[0]):
+        return f"<p>{inline(lines[0].strip())}</p>"
+    out, stack = [], []  # stack: 열린 목록 태그와 들여쓰기
+
+    def close_to(level):
+        while stack and stack[-1][1] >= level:
+            tag, _ = stack.pop()
+            out.append(f"</li></{tag}>")
+
+    for raw in lines:
+        if not raw.strip():
+            continue
+        m = re.match(r"^(\s*)(-|\d+\.)\s+(.*)$", raw)
+        if not m:
+            close_to(0)
+            out.append(f"<p>{inline(raw.strip())}</p>")
+            continue
+        level = len(m.group(1).replace("\t", "  ")) // 2
+        tag = "ol" if m.group(2)[0].isdigit() else "ul"
+        close_to(level + 1)  # 더 깊은 목록은 닫음
+        if stack and stack[-1][1] == level and stack[-1][0] == tag:
+            out.append("</li>")  # 같은 목록의 다음 항목
+        else:
+            if stack and stack[-1][1] == level:
+                close_to(level)  # 같은 깊이인데 목록 종류가 바뀜
+            out.append(f"<{tag}>")
+            stack.append((tag, level))
+        out.append(f"<li><p>{inline(m.group(3).strip())}</p>")
+    close_to(0)
+    return "".join(out)
 
 
 class Converter:
@@ -143,7 +180,7 @@ class Converter:
             out.append("<tr>")
             for i, c in enumerate(r):
                 w = f' data-colwidth="{widths[i]}"' if widths else ""
-                out.append(f"<td{w}><p>{inline(c.strip())}</p></td>")
+                out.append(f"<td{w}>{cell_html(c.strip())}</td>")
             out.append("</tr>")
         out.append("</tbody></table>")
         return "".join(out)
