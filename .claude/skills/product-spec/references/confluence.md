@@ -50,6 +50,7 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 
 1. 페이지를 열고 `fetch('/wiki/api/v2/pages/{pageId}?body-format=storage')`로 본문과 `version.number`, `version.authorId`를 읽음. 마지막 편집자가 본인이 아니면 갱신 절차 3번처럼 멈추고 묻는다
 2. 바꿀 문자열이 본문에 정확히 한 번 나오는지 확인. 0번이거나 2번 이상이면 멈춤
+   - 목록 항목을 나누거나 더할 때는 `<li><p>…</p></li>` 꼴을 그대로 지킨다. `<p>` 안에서 `</li><li>`로 자르면 빈 항목이 생긴다 (2026-10-13 실측)
 3. 문자열을 바꾼 본문으로 `PUT /wiki/api/v2/pages/{pageId}` (`representation: storage`, `version.number`는 읽은 값 + 1, `version.message`에 변경 한 줄)
 4. 같은 내용을 로컬 `spec.md`에도 고친다. 한쪽만 고치지 않음
 5. 페이지를 다시 열어 바뀐 곳을 확인
