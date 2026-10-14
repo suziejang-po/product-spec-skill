@@ -50,7 +50,11 @@ Mermaid는 순서도(`sequenceDiagram`)에만 쓴다. 렌더는 `bash {SKILL_DIR
 
 환경에 따라 아래 중 되는 것 하나
 - 토큰 있음 (`ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`): `bash {SKILL_DIR}/scripts/confluence_attach.sh <pageId> diagrams/{이름}.png`
-- 토큰 없음, Claude in Chrome 있음: 로그인된 브라우저에서 `https://{사이트}/wiki/pages/viewpageattachments.action?pageId={pageId}`를 열고 파일 입력에 PNG를 올린 뒤 '첨부'를 누름. 파일 업로드 도구는 세션이 읽을 수 있는 경로만 받으므로 PNG를 작업 폴더에 둠
+- 토큰 없음, Claude in Chrome 있음 (2026-10-15 실측):
+  1. PNG를 세션 작업 폴더에 둔다. 출력 폴더나 연결된 기기 폴더의 경로는 파일 업로드 도구가 거부함
+  2. 페이지에서 JS로 숨은 `<input type=file id=cc-up>`을 붙이고, `find`로 그 요소를 찾아 파일 업로드 도구로 PNG를 넣는다
+  3. 페이지에서 `PUT /wiki/rest/api/content/{pageId}/child/attachment` (헤더 `X-Atlassian-Token: no-check`, FormData에는 파일만)
+  4. 같은 파일명으로 새 버전을 올리면 400이나 403(XSRF)이 난다. 고칠 때는 `{이름}_v2.png`처럼 새 파일명으로 올림
 - 둘 다 없음: 그림 자리에 `⚠️ 그림은 diagrams/{이름}.png를 페이지에 끌어다 놓아 주세요` 안내 상자를 넣고 게시 안내에 적음
 
 ### 2. 미디어 ID 받기 (2026-10-12 실측)
@@ -69,4 +73,8 @@ Mermaid는 순서도(`sequenceDiagram`)에만 쓴다. 렌더는 `bash {SKILL_DIR
 
 ## 수정 모드
 
-흐름이나 상태가 바뀌면 `charts.py`를 고치고 재렌더한 뒤, 같은 파일명으로 다시 첨부(새 버전). 파일명이 같으면 본문의 미디어는 그대로 둬도 새 버전이 보이는지 확인하고, 안 보이면 2단계부터 다시
+흐름이나 상태가 바뀌면 `charts.py`를 고치고 재렌더한 뒤
+1. 새 파일명(`{이름}_v{N}.png`)으로 첨부
+2. 본문의 `ri:filename`을 새 이름으로 바꾸고, 같은 태그의 `ri:version-at-save` 속성은 지운다 (남기면 없는 버전을 가리켜 '미리 보기를 사용할 수 없음'이 뜸)
+3. PUT 성공 뒤 예전 첨부를 `DELETE /wiki/api/v2/attachments/{id}`로 지움 (휴지통으로 감. 첫 시도 500이면 한 번 더)
+4. 페이지를 다시 열어 그림이 실제로 보이는지 확인. 첨부 목록에 있어도 깨져 보일 수 있음
