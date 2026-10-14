@@ -32,6 +32,11 @@ JARGON_RX = {w: re.compile(BEFORE + re.escape(w) + JARGON_AFTER) for w in JARGON
 # 문서 안에서 행 번호로 다른 곳을 가리키면 행이 늘 때 전부 어긋남. 화면 이름으로 가리킴
 # "구현 상세 14행", "15행 10번", "11행의", "9행 참고"처럼 가리킬 때만. "최대 2행", "2행 3열"은 통과
 ROWREF = re.compile(r"(?:구현 상세|표의)\s*\d+\s*행|\d+\s*행\s*(?:\d+\s*번|참고|의\b|에서|처럼)|\d+\s*번\s*행|\b\d+-\d+의\s")
+# 섹션 번호로 가리키면 섹션이 하나 끼거나 빠질 때 전부 어긋남. "순위 기준: [순위 표](#순위) 확인"처럼 이름과 링크로
+# "(7-9)", "(7-9 표)", "기준은 7-2", "규칙은 7-6"을 잡음. 날짜 "10-17"이나 제목 "### 7-2. 순위"는 통과
+SECREF = re.compile(r"(?:\(|[은는]\s)\d{1,2}-\d{1,2}(?:\s*표)?(?=$|[\s),.])")
+# 표 셀 안에서 문장을 마침표로 잇지 않음. 한 셀에 정보가 여럿이면 '<br>- ' 불릿, 딸린 내용은 '<br>  - ' 한 단계 아래 불릿
+CELLDOT = re.compile(r"\.\s+\S")
 LABEL = re.compile(r"맥락\s*:")
 EMOJI = re.compile("[\U0001F300-\U0001FAFF⌀-⏿☀-➿⬀-⯿]")
 ALLOWED_EMOJI = {"⚠", "\U0001F4D8", "✓", "✔"}  # ⚠ 📘 ✓ ✔
@@ -84,6 +89,18 @@ def check(path):
             m = ROWREF.search(text)
             if m:
                 issues.append((n, "행 번호 참조", f"{m.group()} → 화면 이름으로 가리킴"))
+            if not line.lstrip().startswith("#"):
+                m = SECREF.search(text)
+                if m:
+                    issues.append((n, "섹션 번호 참조", f"{m.group().strip()} → '{{무엇}}: [섹션 이름](#섹션 이름) 확인'"))
+            if text.lstrip().startswith("|") and not re.match(r"^\s*\|[\s|:-]+\|\s*$", text):
+                for cell in text.strip().strip("|").split("|"):
+                    for seg in re.split(r"<br\s*/?>", cell):
+                        body = re.sub(r"^\s*(-|\d+\.)\s+", "", seg).strip()
+                        m = CELLDOT.search(body)
+                        if m:
+                            issues.append((n, "셀 안 문장 잇기", f"'{body[:30]}' → 마침표로 잇지 말고 '<br>- ' 불릿으로 나눔"))
+                            break
             if LABEL.search(text):
                 issues.append((n, "라벨", "맥락:"))
             for m in EMOJI.finditer(text):

@@ -2,7 +2,7 @@
 
 Atlassian MCP 도구(`createConfluencePage`, `updateConfluencePage`, `getConfluencePage`, `createConfluenceInlineComment`, `getAccessibleAtlassianResources`, `atlassianUserInfo`)가 있을 때만 실행. 없으면 이 절차 전체를 건너뛰고 한 줄 안내: "Confluence 게시는 Atlassian MCP 연결 후 다시 요청하면 됩니다"
 
-정본은 로컬 스펙 파일이다. Confluence는 로컬을 변환해 올린 사본이며, 갱신은 부분 치환이 아니라 전체 본문 덮어쓰기로 한다. 사람이 Confluence에서 직접 고친 내용은 덮어쓰기 전 확인으로 지킨다
+정본은 로컬 스펙 파일이다. Confluence는 로컬을 변환해 올린 사본이며, 갱신은 전체 본문 덮어쓰기가 기본이고, 한두 줄 수정은 아래 「작은 수정」 경로를 쓸 수 있다. 사람이 Confluence에서 직접 고친 내용은 덮어쓰기 전 확인으로 지킨다
 
 ## 설정
 
@@ -12,21 +12,20 @@ Atlassian MCP 도구(`createConfluencePage`, `updateConfluencePage`, `getConflue
 
 ```
 python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --media-json media.json --out body.html
-python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode macro --out body.html
 ```
 
-- `contentFormat`는 `html`. 변환기가 금지 기호를 치환하고, 표 첫 열이 `#`이면 열 폭을 고정해 번호 열을 40으로 좁힘
+- `contentFormat`는 `html`. 변환기가 금지 기호를 치환하고, 표 첫 열이 `#`이면 번호 열을 40으로, 화면 단위 3열 표는 140, 200, 나머지로 폭을 고정
 - 변환기가 표준 오류로 본문 크기와 알림(첨부 정보 없음, 그림 파일 없음)을 낸다. 알림은 게시 안내에 그대로 붙임
-- 본문 크기가 40KB를 넘으면 `references/diagram.md`의 크기 규칙을 따름
+- 본문은 `--out body.html`로 파일에도 저장하고, `updateConfluencePage`에 넣기 전에 파일 크기와 인자 길이가 같은지 확인 (잘림 방지). 43KB 본문은 한 번에 올라갔다 (2026-10-12 실측). 한두 줄 수정은 「작은 수정」 경로
 - 게시 전 lint 통과 필수
 
 ## 첫 게시 (메타에 Confluence Page ID 없음)
 
 1. 안내: "Confluence에 새 페이지를 만듭니다 (5분 정도)"
 2. `getAccessibleAtlassianResources`로 cloudId
-3. 제목 `(작성중) [{올해}] Product Spec: {제목}`으로 `createConfluencePage`. 첨부 경로면 그림 자리를 비운 본문으로 먼저 만들고, 블록 경로면 완성 본문으로 만든다
+3. 제목 `(작성중) [{올해}] Product Spec: {제목}`으로 `createConfluencePage`. 그림 자리를 비운 본문으로 먼저 만든다 (그림은 페이지가 있어야 첨부 가능)
 4. 응답의 pageId를 즉시 로컬 스펙 메타의 Confluence Page ID에 기록하고 저장 (이후 단계가 실패해도 페이지를 잃지 않기 위함)
-5. 첨부 경로면 그림 업로드 → media.json → 본문 재변환 → `updateConfluencePage`
+5. 그림 업로드 → media.json → 본문 재변환 → `updateConfluencePage` (`references/diagram.md`)
 6. 수치 인라인 댓글 (아래)
 7. 안내: "게시: {URL}. 지금은 '제품 출시 미정' 아래 (작성중) 상태입니다. 출시가 확정되면 알려 주세요"
 
@@ -44,6 +43,19 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode macro --o
 4. 로컬 스펙 전체를 변환해 `updateConfluencePage`. `contentFormat`는 `html`, `versionMessage`에 변경 요약 한 줄
 5. 응답 `version.number`가 N+1이 아니면 동시 편집으로 보고 즉시 멈추고 보고
 6. 안내: "갱신 완료. 편집 가능"
+
+## 작은 수정 (Chrome 경로)
+
+한두 줄을 고치는데 본문 전체(40KB 안팎)를 MCP 인자로 다시 보내면 느리고 잘릴 위험이 있다. Claude in Chrome이 있고 Confluence에 로그인돼 있으면 페이지에서 REST로 그 부분만 바꾼다 (2026-10-12 실측)
+
+1. 페이지를 열고 `fetch('/wiki/api/v2/pages/{pageId}?body-format=storage')`로 본문과 `version.number`, `version.authorId`를 읽음. 마지막 편집자가 본인이 아니면 갱신 절차 3번처럼 멈추고 묻는다
+2. 바꿀 문자열이 본문에 정확히 한 번 나오는지 확인. 0번이거나 2번 이상이면 멈춤
+   - 목록 항목을 나누거나 더할 때는 `<li><p>…</p></li>` 꼴을 그대로 지킨다. `<p>` 안에서 `</li><li>`로 자르면 빈 항목이 생긴다 (2026-10-13 실측)
+3. 문자열을 바꾼 본문으로 `PUT /wiki/api/v2/pages/{pageId}` (`representation: storage`, `version.number`는 읽은 값 + 1, `version.message`에 변경 한 줄)
+4. 같은 내용을 로컬 `spec.md`에도 고친다. 한쪽만 고치지 않음
+5. 페이지를 다시 열어 바뀐 곳을 확인
+
+문서 안 링크는 storage 형식에서 `<ac:link ac:anchor="{제목}"><ac:link-body>{글자}</ac:link-body></ac:link>`. 앵커 값은 제목의 공백을 하이픈으로 바꾼 것 (`7-2. 순위` → `7-2.-순위`). 공백이 든 앵커는 눌러도 이동하지 않았다
 
 ## 출시 확정 이동
 
@@ -71,3 +83,4 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode macro --o
 - 셀 안 줄바꿈은 `<br>`. 마크다운 원문에서 `<br>`로 적어야 변환됨
 - 셀 안의 `|`는 인라인 코드로 감싸거나 `\|`로 씀
 - 표를 패널 안에 넣지 않음 (Confluence가 거부)
+- 게시 뒤 문서 안 링크를 하나 눌러 제목으로 이동하는지 확인. 변환기는 html 형식에서 `<a href="#{제목-하이픈}">`을 넣는데, html 형식의 이동 동작은 아직 실측하지 않았다. 이동하지 않으면 위 「작은 수정」 방식으로 `ac:link`로 바꾸고 결과를 이 줄에 기록
