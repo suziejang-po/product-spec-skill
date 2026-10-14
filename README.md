@@ -1,4 +1,4 @@
-# product-spec-skill (v4.1.2)
+# product-spec-skill (v4.3.0)
 
 Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬. 원본 레포를 포크해 v4로 재구성
 

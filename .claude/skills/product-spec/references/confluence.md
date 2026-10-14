@@ -55,7 +55,28 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 4. 같은 내용을 로컬 `spec.md`에도 고친다. 한쪽만 고치지 않음
 5. 페이지를 다시 열어 바뀐 곳을 확인
 
-문서 안 링크는 storage 형식에서 `<ac:link ac:anchor="{제목}"><ac:link-body>{글자}</ac:link-body></ac:link>`. 앵커 값은 제목의 공백을 하이픈으로 바꾼 것 (`7-2. 순위` → `7-2.-순위`). 공백이 든 앵커는 눌러도 이동하지 않았다
+- 여러 사람이 같은 페이지를 열어 둔 라이브 문서면, PUT 직전에 본문을 다시 읽고 그 본문에 고칠 내용을 적용한다. 몇 분 전에 읽은 본문으로 PUT하면 그 사이 다른 사람(작성자 포함)이 고친 내용이 사라진다 (2026-10-15 실측: 작성자가 넣은 상태 매크로가 덮어써짐)
+- 페이지를 새로 열면 페이지 JS에 정의한 도우미 함수가 사라진다. 다시 정의하고 시작
+- 인라인 댓글이 달린 글자는 `<ac:inline-comment-marker>`로 감싸져 있어 문자열 바꾸기가 안 맞을 수 있다. 바꿀 때 마커를 그대로 옮겨 넣는다 (지우면 댓글이 사라짐)
+- 문서 안 링크는 쓰지 않는다. 다른 곳은 "7-2 순위 표 확인"처럼 번호와 이름으로
+
+## 차수 표시 (상태 매크로)
+
+`<ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="title">1차</ac:parameter><ac:parameter ac:name="colour">Blue</ac:parameter></ac:structured-macro>`
+
+- 1차 Blue, 2차 Yellow, 3차 Green. 괄호 설명은 매크로 뒤 글자로 (`[1차] (프로그램 정보는 2차)`)
+
+## 시트 첨부
+
+값이 많은 목록은 xlsx로 만들어 페이지에 첨부하고 본문에는 링크만. 링크 꼴: `https://{사이트}/wiki/download/attachments/{pageId}/{파일명}`
+
+## Confluence에서 직접 고친 뒤 로컬 맞추기
+
+작업을 Confluence에서 바로 했으면(작은 수정 경로, 작성자 직접 편집) 끝에 로컬을 맞춘다. 한쪽만 최신인 채로 끝내지 않음
+1. 로컬 `spec.md`를 `spec.md.bak.{YYYYMMDD-HHMMSS}`로 백업
+2. Confluence 본문을 마크다운으로 받아 `spec.md`에 저장. 표 셀 안 목록은 `<br>- `, 딸린 항목은 `<br>  - `로 바꾸고, 차수 매크로는 `[1차]` 글자로, 그림은 `diagrams/{첨부 파일명}`으로
+3. 페이지 첨부의 그림과 시트를 `diagrams/`와 스펙 폴더에 같은 파일명으로 둠
+4. lint 통과 확인
 
 ## 출시 확정 이동
 
@@ -83,4 +104,4 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 - 셀 안 줄바꿈은 `<br>`. 마크다운 원문에서 `<br>`로 적어야 변환됨
 - 셀 안의 `|`는 인라인 코드로 감싸거나 `\|`로 씀
 - 표를 패널 안에 넣지 않음 (Confluence가 거부)
-- 게시 뒤 문서 안 링크를 하나 눌러 제목으로 이동하는지 확인. 변환기는 html 형식에서 `<a href="#{제목-하이픈}">`을 넣는데, html 형식의 이동 동작은 아직 실측하지 않았다. 이동하지 않으면 위 「작은 수정」 방식으로 `ac:link`로 바꾸고 결과를 이 줄에 기록
+- 문서 안 링크(앵커)는 넣지 않음
