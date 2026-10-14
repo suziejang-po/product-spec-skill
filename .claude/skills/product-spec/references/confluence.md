@@ -70,6 +70,14 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 
 값이 많은 목록은 xlsx로 만들어 페이지에 첨부하고 본문에는 링크만. 링크 꼴: `https://{사이트}/wiki/download/attachments/{pageId}/{파일명}`
 
+## Confluence에서 직접 고친 뒤 로컬 맞추기
+
+작업을 Confluence에서 바로 했으면(작은 수정 경로, 작성자 직접 편집) 끝에 로컬을 맞춘다. 한쪽만 최신인 채로 끝내지 않음
+1. 로컬 `spec.md`를 `spec.md.bak.{YYYYMMDD-HHMMSS}`로 백업
+2. Confluence 본문을 마크다운으로 받아 `spec.md`에 저장. 표 셀 안 목록은 `<br>- `, 딸린 항목은 `<br>  - `로 바꾸고, 차수 매크로는 `[1차]` 글자로, 그림은 `diagrams/{첨부 파일명}`으로
+3. 페이지 첨부의 그림과 시트를 `diagrams/`와 스펙 폴더에 같은 파일명으로 둠
+4. lint 통과 확인
+
 ## 출시 확정 이동
 
 작성자가 "출시 확정", "작성 완료했어"라고 하면
