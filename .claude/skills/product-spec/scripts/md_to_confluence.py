@@ -225,13 +225,15 @@ class Converter:
                     out.append(self.table(rows))
                 continue
             if re.match(r"^[-*]\s", s) or re.match(r"^\d+\.\s", s):
-                ordered = bool(re.match(r"^\d+\.\s", s))
-                tag = "ol" if ordered else "ul"
+                # 들여쓰기로 묶은 목록. 들여쓰기 폭(2칸, 4칸 모두)을 깊이 순서로 바꿔 표 셀과 같은 방식으로 변환
                 items = []
                 while i < len(lines) and (re.match(r"^\s*[-*]\s", lines[i]) or re.match(r"^\s*\d+\.\s", lines[i])):
-                    items.append(re.sub(r"^\s*([-*]|\d+\.)\s", "", lines[i]))
+                    m2 = re.match(r"^(\s*)([-*]|\d+\.)\s+(.*)$", lines[i])
+                    items.append((len(m2.group(1).replace("\t", "    ")), "-" if m2.group(2) in "-*" else m2.group(2), m2.group(3)))
                     i += 1
-                out.append(f"<{tag}>" + "".join(f"<li><p>{inline(x)}</p></li>" for x in items) + f"</{tag}>")
+                widths = sorted({w for w, _, _ in items})
+                joined = "<br>".join("  " * widths.index(w) + f"{mark} {body}" for w, mark, body in items)
+                out.append(cell_html(joined))
                 continue
             para = [s]
             i += 1
