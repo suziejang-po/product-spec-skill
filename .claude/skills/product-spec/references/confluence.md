@@ -19,19 +19,19 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 - 본문은 `--out body.html`로 파일에도 저장하고, `updateConfluencePage`에 넣기 전에 파일 크기와 인자 길이가 같은지 확인 (잘림 방지). 43KB 본문은 한 번에 올라갔다 (2026-10-12 실측). 한두 줄 수정은 「작은 수정」 경로
 - 게시 전 lint 통과 필수
 
-## 첫 게시 (메타에 Confluence Page ID 없음)
+## 첫 게시 (spec.md 첫 줄에 Page ID 주석 없음)
 
 1. 안내: "Confluence에 새 페이지를 만듭니다 (5분 정도)"
 2. `getAccessibleAtlassianResources`로 cloudId
 3. 제목 `(작성중) [{올해}] Product Spec: {제목}`으로 `createConfluencePage`. 그림 자리를 비운 본문으로 먼저 만든다 (그림은 페이지가 있어야 첨부 가능)
-4. 응답의 pageId를 즉시 로컬 스펙 메타의 Confluence Page ID에 기록하고 저장 (이후 단계가 실패해도 페이지를 잃지 않기 위함)
+4. 응답의 pageId를 즉시 로컬 spec.md 첫 줄에 `<!-- Confluence Page ID: {pageId} -->`로 기록하고 저장. 본문 메타 표에는 넣지 않음 (변환기가 주석을 지우므로 Confluence에는 보이지 않음) (이후 단계가 실패해도 페이지를 잃지 않기 위함)
 5. 그림 업로드 → media.json → 본문 재변환 → `updateConfluencePage` (`references/diagram.md`)
 6. 수치 인라인 댓글 (아래)
 7. 안내: "게시: {URL}. 지금은 '제품 출시 미정' 아래 (작성중) 상태입니다. 출시가 확정되면 알려 주세요"
 
-실패 복구: 3번 뒤에 실패하면 페이지는 있고 그림이 없는 상태. 다음 실행에서 메타의 Page ID로 갱신 절차를 타면 복구된다. 안내에 "그림 삽입이 실패했습니다. 다시 '게시해줘'라고 하면 이어서 합니다"를 붙인다
+실패 복구: 3번 뒤에 실패하면 페이지는 있고 그림이 없는 상태. 다음 실행에서 첫 줄 주석의 Page ID로 갱신 절차를 타면 복구된다. 안내에 "그림 삽입이 실패했습니다. 다시 '게시해줘'라고 하면 이어서 합니다"를 붙인다
 
-## 갱신 (메타에 Page ID 있음)
+## 갱신 (spec.md 첫 줄에 Page ID 주석 있음)
 
 1. 안내: "Confluence 페이지를 갱신합니다 (5분 정도). 끝날 때까지 페이지 편집을 멈춰 주세요"
 2. `getConfluencePage(pageId)`로 `version.number`, `version.by.accountId`, `version.by.displayName`, `version.when` 확인. 이전에 읽은 값을 재사용하지 않음

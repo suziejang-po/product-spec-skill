@@ -26,7 +26,7 @@ JARGON = {
     "밸리데이션": "검사",
     "큐": "대기 목록",
 }
-JARGON_EXCEPT = ["액션 시트"]  # 실제 컴포넌트 이름
+JARGON_EXCEPT = ["액션 시트", "버튼/액션"]  # 실제 컴포넌트 이름, 용어 하위 표 이름
 JARGON_AFTER = r"(?=$|[\s)\]\(\|,.:;/'\"]|은|는|이|가|을|를|의|로|에|와|과|도|만|별|적|화)"
 JARGON_RX = {w: re.compile(BEFORE + re.escape(w) + JARGON_AFTER) for w in JARGON}
 # 문서 안에서 행 번호로 다른 곳을 가리키면 행이 늘 때 전부 어긋남. 화면 이름으로 가리킴
@@ -38,6 +38,8 @@ ANCHORLINK = re.compile(r"\]\(#[^)]*\)")
 # 표 셀 안에서 문장을 마침표로 잇지 않음. 한 셀에 정보가 여럿이면 '<br>- ' 불릿, 딸린 내용은 '<br>  - ' 한 단계 아래 불릿
 CELLDOT = re.compile(r"\.\s+\S")
 LABEL = re.compile(r"맥락\s*:")
+# 정해지지 않은 UI 문구 표시는 (문구 워싱 필요)로 통일
+DRAFT = re.compile(r"\(문구 초안\)")
 EMOJI = re.compile("[\U0001F300-\U0001FAFF⌀-⏿☀-➿⬀-⯿]")
 ALLOWED_EMOJI = {"⚠", "\U0001F4D8", "✓", "✔"}  # ⚠ 📘 ✓ ✔
 URL = re.compile(r"https?://\S+")
@@ -102,6 +104,8 @@ def check(path):
                             break
             if LABEL.search(text):
                 issues.append((n, "라벨", "맥락:"))
+            if DRAFT.search(line):
+                issues.append((n, "문구 표시", "(문구 초안) → (문구 워싱 필요)"))
             for m in EMOJI.finditer(text):
                 if m.group() not in ALLOWED_EMOJI:
                     issues.append((n, "이모지", m.group()))
@@ -130,13 +134,55 @@ def check_counts(path):
     return out
 
 
+H2 = re.compile(r"^##\s+(\d+)\.\s")
+H3 = re.compile(r"^###\s+(\d+)-(\d+)\.\s")
+
+
+def check_structure(path):
+    """v5 번호 뼈대: '## 1. 개요'부터 번호가 커지는 순서, '### N-M.'은 바로 위 '## N.' 아래에서 커지는 순서.
+    번호 섹션이 하나도 없으면 v5 양식이 아님"""
+    out = []
+    last2, last3 = 0, 0
+    seen = False
+    in_code = False
+    for n, raw in enumerate(open(path, encoding="utf-8"), 1):
+        line = raw.rstrip("\n")
+        if line.strip().startswith("```"):
+            in_code = not in_code
+            continue
+        if in_code:
+            continue
+        m = H2.match(line)
+        if m:
+            k = int(m.group(1))
+            if not seen and (k != 1 or "개요" not in line):
+                out.append((n, "구조", "첫 번호 섹션은 '## 1. 개요'"))
+            if k <= last2:
+                out.append((n, "구조", f"섹션 번호 {k}가 앞 번호 {last2}보다 크지 않음"))
+            if k > 8:
+                out.append((n, "구조", f"최상위 섹션은 8까지 (지금 {k})"))
+            seen, last2, last3 = True, k, 0
+            continue
+        m = H3.match(line)
+        if m:
+            a, b = int(m.group(1)), int(m.group(2))
+            if a != last2:
+                out.append((n, "구조", f"'{a}-{b}'가 '## {last2}.' 아래에 있음"))
+            elif b <= last3:
+                out.append((n, "구조", f"하위 번호 {a}-{b}가 앞 번호보다 크지 않음"))
+            last3 = b
+    if not seen:
+        out.append((1, "구조", "번호 섹션 없음. references/template.md의 1~8 뼈대를 씀"))
+    return out
+
+
 def main():
     if len(sys.argv) < 2:
         print("사용법: lint_spec.py <file.md> [...]")
         return 2
     total = 0
     for path in sys.argv[1:]:
-        for n, kind, what in check(path) + check_counts(path):
+        for n, kind, what in check(path) + check_counts(path) + check_structure(path):
             print(f"{path}:{n}: {kind}: {what}")
             total += 1
     if total:
