@@ -1,4 +1,4 @@
-# product-spec-skill (v5.0.0)
+# product-spec-skill (v5.0.1)
 
 Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬. 원본 레포를 포크해 v4, v5로 재구성
 
@@ -32,11 +32,24 @@ Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬.
 
 ## 설치
 
+### Claude 앱 (claude.ai, 데스크톱 앱)
+
+1. [dist/product-spec.zip](dist/product-spec.zip)을 내려받음 (Download raw file)
+2. 설정 > 기능(Capabilities)에서 코드 실행을 켬
+3. 같은 화면의 스킬에서 zip 업로드
+4. 채팅에서 "스펙 작성해줘"로 호출
+
+zip 안은 `product-spec/` 폴더 하나. 압축을 풀거나 다시 묶지 않고 그대로 올림
+
+### Claude Code
+
 Claude Code에 URL을 주고 설치를 요청
 
 > 이 스킬 설치해줘 https://github.com/suziejang-po/product-spec-skill
 
-Node.js가 있어야 다이어그램을 그린다 (`npx @mermaid-js/mermaid-cli`를 자동으로 받음)
+또는 레포의 `.claude/skills/product-spec` 폴더를 `~/.claude/skills/` 아래에 복사
+
+Node.js가 있어야 다이어그램을 그린다
 
 ## 사용
 

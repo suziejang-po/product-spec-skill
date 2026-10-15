@@ -1,28 +1,8 @@
 ---
 name: product-spec
-skill-version: "5.0.0"
-skill-repo: suziejang-po/product-spec-skill
-skill-files:
-  - SKILL.md
-  - references/template.md
-  - references/template-example.md
-  - references/template-example-new.md
-  - references/swimlane-example.py
-  - references/review-checklist.md
-  - references/question-map.md
-  - references/context-pack.md
-  - references/diagram.md
-  - references/confluence.md
-  - references/writing-style.md
-  - scripts/lint_spec.py
-  - scripts/render_diagram.sh
-  - scripts/svgkit.py
-  - scripts/render_svg.py
-  - scripts/mermaid_macro.py
-  - scripts/confluence_attach.sh
-  - scripts/md_to_confluence.py
-description: Wantedlab Product Spec(v5)을 생성하거나 수정한다. 개발 킥오프용 실행 문서 전용. 도메인 팩 수집 → 출처 있는 내용만 채운 1~8 번호 뼈대 초안(개요, 용어와 상태/버튼 표, 구조, 플로우, 화면 또는 구현 상세, 어드민, 공통 정책, 원티드 화면 변경과 외부 연동) → 리뷰 체크리스트로 빈칸을 질문 → 담당자 띠 흐름도를 그림으로 삽입 → Confluence 게시. 사용자가 다음과 같이 말할 때 사용: "프로덕트 스펙 작성", "PRD 작성", "PRD 만들어줘", "Spec 작성", "스펙 작성", "스펙 문서", "스펙 만들어줘", "스펙 수정", "구현 요구사항 정리", "디자이너에게 넘길 스펙", "개발에 넘길 문서", "/product-spec". 회고, 인수인계, 미팅록, QA 시나리오, 일반 문서 정리 요청에는 쓰지 않는다.
+description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '/product-spec' 요청에 쓴다. 출처 있는 내용만 1~8 번호 뼈대로 쓰고 빈칸은 질문, Confluence에 게시. 회고, 미팅록에는 안 씀
 ---
+<!-- skill-version: 5.0.1 / skill-repo: suziejang-po/product-spec-skill -->
 
 # Product Spec 생성 에이전트 v5
 
@@ -45,10 +25,10 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 1. 스킬 폴더 확인. 지금 로드된 이 SKILL.md의 실제 경로를 찾아 그 폴더를 `SKILL_DIR`로 삼는다 (설치 위치가 환경마다 다르므로 경로를 하드코딩하지 않는다). 아래의 `{SKILL_DIR}/scripts/...`는 전부 이 값으로 바꿔 실행
 2. 버전 확인 (1회, 실패하면 조용히 넘어감)
    ```bash
-   curl -sf "https://raw.githubusercontent.com/suziejang-po/product-spec-skill/main/.claude/skills/product-spec/SKILL.md" | head -5 | grep 'skill-version'
+   curl -sf "https://raw.githubusercontent.com/suziejang-po/product-spec-skill/main/.claude/skills/product-spec/SKILL.md" | head -8 | grep -o 'skill-version: [0-9.]*'
    ```
    원격 버전이 로컬보다 클 때만(숫자 세 자리를 각각 비교) 한 줄 안내: "product-spec 스킬 업데이트가 있습니다 (로컬 {로컬} → 최신 {원격}). '스킬 업데이트해줘'라고 하면 갱신합니다. 중앙 등록 스킬이면 관리 담당자에게 요청하세요". 같거나 로컬이 더 크면 아무것도 출력하지 않음
-3. "스킬 업데이트해줘" 요청 시: 원격 SKILL.md를 임시 파일로 받아 `skill-files` 목록이 있는지 확인. 없으면 "원격 스킬이 v4 구조가 아니라 갱신을 중단했습니다"로 끝. 있으면 `SKILL_DIR`를 `SKILL_DIR.bak.{YYYYMMDD-HHMMSS}`로 복사한 뒤 목록의 파일을 같은 상대 경로로 내려받아 덮어씀. 쓰기 불가 환경이면 시도하지 않고 담당자 안내만. 성공하면 "스킬을 {버전}으로 갱신했습니다. 새 지침은 다음 실행부터 적용됩니다"
+3. "스킬 업데이트해줘" 요청 시: 원격 SKILL.md를 임시 파일로 받아 맨 아래 「skill-files」 목록이 있는지 확인. 없으면 "원격 스킬이 v4 구조가 아니라 갱신을 중단했습니다"로 끝. 있으면 `SKILL_DIR`를 `SKILL_DIR.bak.{YYYYMMDD-HHMMSS}`로 복사한 뒤 목록의 파일을 같은 상대 경로로 내려받아 덮어씀. 쓰기 불가 환경이면 시도하지 않고 담당자 안내만. 성공하면 "스킬을 {버전}으로 갱신했습니다. 새 지침은 다음 실행부터 적용됩니다"
 
 ## 산출물 위치
 
@@ -190,3 +170,26 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 - 스펙이 이미 있는데 전체를 다시 만드는 것
 - Confluence 페이지를 재읽기 없이 덮어쓰는 것. 로컬과 Confluence 중 한쪽만 갱신하는 것
 - 남의 토큰을 쓰거나 토큰을 파일에 적는 것
+
+## skill-files
+
+스킬 업데이트 때 내려받는 파일 목록. 파일을 더하거나 빼면 이 목록도 고친다
+
+- SKILL.md
+- references/template.md
+- references/template-example.md
+- references/template-example-new.md
+- references/swimlane-example.py
+- references/review-checklist.md
+- references/question-map.md
+- references/context-pack.md
+- references/diagram.md
+- references/confluence.md
+- references/writing-style.md
+- scripts/lint_spec.py
+- scripts/render_diagram.sh
+- scripts/svgkit.py
+- scripts/render_svg.py
+- scripts/mermaid_macro.py
+- scripts/confluence_attach.sh
+- scripts/md_to_confluence.py

@@ -1,4 +1,4 @@
-# product-spec 스킬 사용 안내 (v5.0.0)
+# product-spec 스킬 사용 안내 (v5.0.1)
 
 ## 무엇인가
 
@@ -13,7 +13,9 @@
 
 ## 설치 (한 번)
 
-- Claude Code에서 아래 한 줄
+- Claude 앱 (claude.ai, 데스크톱 앱)
+  - 레포의 `dist/product-spec.zip`을 내려받아 설정 > 기능 > 스킬에서 업로드 (코드 실행 켜기)
+- Claude Code
   - `이 스킬 설치해줘 https://github.com/suziejang-po/product-spec-skill`
 - 준비물
   - Node.js (흐름도 그림 렌더. 없으면 그림 대신 확인 필요 표시)
