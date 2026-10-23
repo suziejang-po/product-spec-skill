@@ -116,7 +116,7 @@ def check(path):
     return issues
 
 
-HEAD = re.compile(r"착수 전 확인 필요\s*(\d+)건,\s*확인 필요 전체\s*(\d+)건")
+HEAD = re.compile(r"확인\s*필요[^|\n]{0,20}?\d+\s*건|\d+\s*건[^|\n]{0,10}?확인\s*필요")
 WARN = re.compile("\u26a0(?!\ufe0f?\\s*착수 조건)")
 
 
@@ -136,6 +136,87 @@ def check_counts(path):
         text = re.sub(r"<!--.*?-->", "", line)
         if WARN.search(text):
             out.append((n, "확인 표시", "⚠️는 '⚠️ 착수 조건: … → {담당} 확인 필요'에만. 나머지는 '(… 확인 필요)' 평문 괄호"))
+    return out
+
+
+# 결정 과정을 남기는 날짜 표시. "10/16 확정", "2026-10-20 기준", "10월 16일 합의"
+DECISION_DATE = re.compile(r"(?:\d{4}[-./])?\d{1,2}[/.월-]\s?\d{1,2}일?\s*(?:확정|정본|기준|결정|합의|변경)")
+# 넣지 않는 섹션. 확인 사항은 인라인, 뺀 기능은 언급하지 않음, 데이터 모델과 일정은 스펙 밖
+BANNED_H2 = re.compile(r"데이터와\s*API|데이터\s*모델|제외\s*범위|배포|롤백|확인\s*필요|논의|미결|담당과\s*일정|업데이트\s*로그|변경\s*이력|시나리오|향후")
+BANNED_H3 = re.compile(r"^(?:확인\s*필요|제외\s*범위|배포와\s*롤백|담당과\s*일정|데이터와\s*API|데이터\s*모델)$")
+HEAD_ANY = re.compile(r"^(#{2,3})\s+(\d+(?:-\d+)?)\.\s+(.*)$")
+TABLE_SEP = re.compile(r"^\s*\|[\s|:-]+\|\s*$")
+IMPL_HEADER = ["#", "진입점", "화면", "기능", "요구사항"]
+SCREEN_HEADER = ["화면", "진입점", "상세 내용"]
+
+
+def cells(line):
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def check_shape(path):
+    """양식 검사: 넣지 않는 섹션, 결정 날짜, 문단 서술, 메타의 문서 유형, 구현 상세 5열과 화면 표 3열"""
+    out = []
+    lines = open(path, encoding="utf-8").read().split("\n")
+    in_code = in_comment = False
+    h2 = ""          # 지금 있는 '## N.' 제목
+    region_first_table = True
+    has_impl = has_screen = False
+    for n, raw in enumerate(lines, 1):
+        line = raw.rstrip()
+        s = line.strip()
+        if s.startswith("```"):
+            in_code = not in_code
+            continue
+        if in_code:
+            continue
+        if "<!--" in s and "-->" not in s:
+            in_comment = True
+            continue
+        if in_comment:
+            if "-->" in s:
+                in_comment = False
+            continue
+        if "lint-skip" in line:
+            continue
+        m = HEAD_ANY.match(s)
+        if m:
+            level, num, title = m.groups()
+            if level == "##":
+                h2 = title
+                if BANNED_H2.search(title):
+                    out.append((n, "넣지 않는 섹션", f"'{title}' → 확인 사항은 해당 기능 옆 인라인, 뺀 기능은 언급하지 않음, 데이터 모델과 일정은 메타나 스펙 밖"))
+                if "구현 상세" in title:
+                    has_impl = True
+                if "화면" in title:
+                    has_screen = True
+            elif BANNED_H3.match(title.strip()):
+                out.append((n, "넣지 않는 섹션", f"'{title}'"))
+            region_first_table = True
+            continue
+        text = strip(line)
+        m = DECISION_DATE.search(text)
+        if m:
+            out.append((n, "결정 날짜", f"'{m.group()}' → 결정 과정과 날짜를 쓰지 않고 최종 내용만"))
+        if s.startswith("|") and not TABLE_SEP.match(s):
+            row = cells(s)
+            if row and row[0] == "문서 유형":
+                out.append((n, "메타", "문서 유형은 채팅 첫 줄에만. 메타 표에 넣지 않음"))
+            nxt = lines[n].strip() if n < len(lines) else ""
+            if TABLE_SEP.match(nxt) and region_first_table:   # 표 머리줄
+                region_first_table = False
+                if "구현 상세" in h2 and row != IMPL_HEADER:
+                    out.append((n, "구현 상세 표", f"열이 '{' | '.join(row)}' → '# | 진입점 | 화면 | 기능 | 요구사항' 5열"))
+                if ("유저향 화면" in h2 or "어드민" in h2) and row != SCREEN_HEADER:
+                    out.append((n, "화면 표", f"열이 '{' | '.join(row)}' → '화면 | 진입점 | 상세 내용' 3열"))
+            continue
+        # 문단 서술: 목록, 표, 제목, 그림, 인용이 아닌 줄이 긴 완결문이면
+        if s and not re.match(r"^([-*>#|!<]|\d+[.)]\s|\[)", s):
+            body = text.strip()
+            if len(body) >= 40 and (re.search(r"다\.$", body) or len(re.findall(r"[가-힣]\.\s+\S", body)) >= 1):
+                out.append((n, "문단 서술", f"'{body[:30]}…' → 개조식 불릿으로 나눔"))
+    if not (has_impl or has_screen):
+        out.append((1, "구조", "'유저향 화면' 또는 '구현 상세' 섹션이 없음. references/template.md의 섹션 순서를 씀"))
     return out
 
 
@@ -185,7 +266,7 @@ def main():
         return 2
     total = 0
     for path in sys.argv[1:]:
-        for n, kind, what in check(path) + check_counts(path) + check_structure(path):
+        for n, kind, what in check(path) + check_counts(path) + check_structure(path) + check_shape(path):
             print(f"{path}:{n}: {kind}: {what}")
             total += 1
     if total:

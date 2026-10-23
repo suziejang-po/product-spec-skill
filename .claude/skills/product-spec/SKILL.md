@@ -2,11 +2,22 @@
 name: product-spec
 description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '/product-spec' 요청에 쓴다. 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 회고, 미팅록에는 안 씀
 ---
-<!-- skill-version: 5.2.1 / skill-repo: suziejang-po/product-spec-skill -->
+<!-- skill-version: 5.3.0 / skill-repo: suziejang-po/product-spec-skill -->
 
-# Product Spec 생성 에이전트 v5.2
+# Product Spec 생성 에이전트 v5.3
 
 Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양식과 절차는 `references/`, 도구는 `scripts/`
+
+## 먼저 읽을 파일 (건너뛰지 않음)
+
+초안을 쓰기 전에 아래 파일을 직접 연다. 읽지 않고 기억이나 짐작으로 쓰지 않는다
+
+1. `references/template.md`: 섹션 순서와 표 양식
+2. `references/writing-style.md`: 문체, 금지어, 넣지 않는 것
+3. `references/review-checklist.md`: 초안 판정 기준
+4. 문서 유형에 맞는 예시 1개: `template-example-new.md`(New Product), `template-example.md`(Feature, 실험), `template-example-enhancement.md`(Enhancement)
+
+저장과 게시는 스크립트가 막는다: `scripts/lint_spec.py`를 통과하지 않으면 `scripts/md_to_confluence.py`가 본문을 만들지 않는다. lint 위반은 문서를 고쳐서 없애고, 다른 방법으로 게시하지 않는다
 
 ## 원칙 (이것을 어기면 문서가 아니라 부담이 된다)
 
@@ -26,11 +37,13 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 ## 시작 전 준비
 
 1. 스킬 폴더 확인. 지금 로드된 이 SKILL.md의 실제 경로를 찾아 그 폴더를 `SKILL_DIR`로 삼는다 (설치 위치가 환경마다 다르므로 경로를 하드코딩하지 않는다). 아래의 `{SKILL_DIR}/scripts/...`는 전부 이 값으로 바꿔 실행
-2. 버전 확인 (1회, 실패하면 조용히 넘어감)
+2. 버전 확인 (1회)
    ```bash
    curl -sf "https://raw.githubusercontent.com/suziejang-po/product-spec-skill/main/.claude/skills/product-spec/SKILL.md" | head -8 | grep -o 'skill-version: [0-9.]*'
    ```
-   원격 버전이 로컬보다 클 때만(숫자 세 자리를 각각 비교) 한 줄 안내: "product-spec 스킬 업데이트가 있습니다 (로컬 {로컬} → 최신 {원격}). '스킬 업데이트해줘'라고 하면 갱신합니다. 중앙 등록 스킬이면 관리 담당자에게 요청하세요". 같거나 로컬이 더 크면 아무것도 출력하지 않음
+   - 원격 버전이 로컬보다 크면(숫자 세 자리를 각각 비교) 진행 전에 묻는다: "product-spec 스킬이 최신이 아닙니다 (로컬 {로컬} → 최신 {원격}). 1) 업데이트하고 진행 2) 지금 버전으로 진행". 1이면 아래 3번 절차로 갱신한 뒤 새 SKILL.md를 다시 읽고 시작. 갱신할 수 없는 환경(Claude 앱 등)이면 "레포의 dist/product-spec.zip을 다시 올려 주세요" 안내 후 작성자가 고른 대로 진행
+   - 같거나 로컬이 더 크면 아무것도 출력하지 않음
+   - 확인에 실패하면(네트워크 차단 등) 한 줄만: "최신 버전을 확인하지 못했습니다 (로컬 {로컬})"
 3. "스킬 업데이트해줘" 요청 시: 원격 SKILL.md를 임시 파일로 받아 맨 아래 「skill-files」 목록이 있는지 확인. 없으면 "원격 스킬이 v4 구조가 아니라 갱신을 중단했습니다"로 끝. 있으면 `SKILL_DIR`를 `SKILL_DIR.bak.{YYYYMMDD-HHMMSS}`로 복사한 뒤 목록의 파일을 같은 상대 경로로 내려받아 덮어씀. 쓰기 불가 환경이면 시도하지 않고 담당자 안내만. 성공하면 "스킬을 {버전}으로 갱신했습니다. 새 지침은 다음 실행부터 적용됩니다"
 
 ## 산출물 위치
@@ -129,7 +142,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 
 ### Phase 5. Confluence 게시
 
-`references/confluence.md`대로. Atlassian MCP가 없으면 건너뜀. 다이어그램은 `references/diagram.md`대로 첨부 파일로 올려 본문에 미디어로 넣음(토큰 스크립트, 없으면 Chrome). 게시 후 근거가 있는 수치에 인라인 댓글
+`references/confluence.md`대로. Atlassian MCP가 없으면 건너뜀. 게시 본문은 `scripts/md_to_confluence.py`의 출력만 쓴다. 변환기가 lint 위반으로 멈추면 문서를 고쳐 다시 변환하고, HTML을 직접 쓰거나 MCP에 다른 본문을 넣어 우회하지 않는다. 게시 안내에 'lint 통과'를 함께 적는다. 다이어그램은 `references/diagram.md`대로 첨부 파일로 올려 본문에 미디어로 넣음(토큰 스크립트, 없으면 Chrome). 게시 후 근거가 있는 수치에 인라인 댓글
 
 ## 확인 필요 다루기
 

@@ -17,7 +17,8 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 - `contentFormat`는 `html`. 변환기가 금지 기호를 치환하고, 표 첫 열이 `#`이면 번호 열을 40으로, 화면 단위 3열 표는 140, 200, 나머지로 폭을 고정
 - 변환기가 표준 오류로 본문 크기와 알림(첨부 정보 없음, 그림 파일 없음)을 낸다. 알림은 게시 안내에 그대로 붙임
 - 본문은 `--out body.html`로 파일에도 저장하고, `updateConfluencePage`에 넣기 전에 파일 크기와 인자 길이가 같은지 확인 (잘림 방지). 43KB 본문은 한 번에 올라갔다 (2026-10-12 실측). 한두 줄 수정은 「작은 수정」 경로
-- 게시 전 lint 통과 필수
+- 게시 전 lint 통과 필수. 변환기가 먼저 `lint_spec.py`를 돌리고 위반이 있으면 본문을 만들지 않고 종료 코드 1로 멈춘다. 이때는 위반을 고쳐 다시 변환한다
+- `createConfluencePage`, `updateConfluencePage`에 넣는 본문은 변환기가 만든 `body.html`만. 직접 쓴 HTML, 마크다운 원문, 요약본을 넣지 않는다
 
 ## 첫 게시 (spec.md 첫 줄에 Page ID 주석 없음)
 

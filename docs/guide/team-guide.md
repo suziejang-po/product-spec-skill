@@ -1,4 +1,4 @@
-# product-spec 스킬 사용 안내 (v5.2.1)
+# product-spec 스킬 사용 안내 (v5.3.0)
 
 ## 무엇인가
 

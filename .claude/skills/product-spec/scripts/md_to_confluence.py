@@ -7,7 +7,8 @@
 - 화면, 진입점, 상세 내용 3열 표(New Product)는 140, 200, 나머지로 고정
 - [글자](#제목)은 같은 페이지 제목으로 가는 링크로 바꿈
 - 표 셀 안의 '- ' 줄은 불릿, '  - ' 는 한 단계 아래 불릿, '1. ' 은 번호 목록으로 바꿈
-- 변환 직전 금지 기호를 치환"""
+- 변환 직전 금지 기호를 치환
+- 변환 전에 lint_spec.py 검사를 돌리고, 위반이 있으면 본문을 만들지 않고 종료 코드 1 (게시 차단)"""
 import argparse
 import html
 import json
@@ -251,6 +252,15 @@ def main():
     ap.add_argument("--media-json", help='{"파일명": {"mediaId": "...", "collection": "..."}}')
     ap.add_argument("--out", help="본문을 이 파일에도 저장")
     a = ap.parse_args()
+    # 게시 전 lint 통과 필수. 위반이 있으면 본문을 만들지 않는다 (Confluence에 올라가는 것을 코드로 막음)
+    import lint_spec  # noqa: E402
+    issues = lint_spec.check(a.spec) + lint_spec.check_counts(a.spec) + lint_spec.check_structure(a.spec) + lint_spec.check_shape(a.spec)
+    if issues:
+        for n, kind, what in issues:
+            print(f"{a.spec}:{n}: {kind}: {what}", file=sys.stderr)
+        print(f"lint 위반 {len(issues)}건. 고친 뒤 다시 변환하세요. 본문을 만들지 않았습니다 (게시 중단)", file=sys.stderr)
+        return 1
+    print("lint 통과", file=sys.stderr)
     media = json.load(open(a.media_json, encoding="utf-8")) if a.media_json else {}
     conv = Converter(os.path.dirname(os.path.abspath(a.spec)), a.diagram_mode, media)
     body = conv.convert(open(a.spec, encoding="utf-8").read())
