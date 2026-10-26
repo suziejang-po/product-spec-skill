@@ -16,4 +16,7 @@ if python3 $S/scripts/md_to_confluence.py tests/fixtures/bad-spec.md --out /tmp/
   echo "실패: 변환기가 lint 위반 문서를 변환함"; fail=1
 else echo "검출 OK: 변환기가 게시를 막음"; fi
 if python3 $S/scripts/md_to_confluence.py $S/references/template-example.md >/dev/null 2>&1; then echo "통과 OK: 변환기가 정상 문서를 변환함"; else echo "실패: 변환기가 정상 문서를 막음"; fail=1; fi
+python3 tests/check_wireframe.py $S/references/wireframe-template.html || fail=1
+# skill-files 목록에 있는 파일이 실제로 있는지
+while read -r f; do [ -f "$S/$f" ] || { echo "실패: skill-files에 있는데 없음 $f"; fail=1; }; done < <(sed -n '/^## skill-files/,$p' $S/SKILL.md | grep '^- ' | sed 's/^- //')
 exit $fail

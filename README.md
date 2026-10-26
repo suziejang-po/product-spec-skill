@@ -1,4 +1,4 @@
-# product-spec-skill (v5.3.0)
+# product-spec-skill (v5.4.0)
 
 Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬. 원본 레포를 포크해 v4, v5로 재구성
 
@@ -29,6 +29,8 @@ Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬.
 - 프로토타입이 있으면 유저 관점 리뷰(과업별로 처음 누를 곳과 찾는지)를 따로 돌림. 상태별 화면은 시연 패널로 전환 (v5.2)
 - 게시 전 검사를 코드로 강제: lint를 통과하지 않으면 Confluence 본문 변환기가 본문을 만들지 않음. lint에 넣지 않는 섹션, 결정 날짜, 문단 서술, 메타의 문서 유형, 구현 상세 5열과 화면 표 3열 검사 추가 (v5.3)
 - 시작 전에 읽을 파일을 SKILL.md 맨 위에 명시. 로컬 스킬이 최신이 아니면 업데이트할지 먼저 물음 (v5.3)
+- 스펙 화면을 노션 페이지처럼 한 장에 늘어놓은 WDS 와이어프레임 HTML을 만듦. 화면마다 요구사항 목록과 와이어프레임을 같이 두고, 버튼, 탭, 입력 검사, 모달이 동작함. 아티팩트 질문에서 3번을 고르거나 "와이어프레임 만들어줘" (v5.4)
+- 플러그인 마켓플레이스에서 설치할 수 있게 `.claude-plugin/plugin.json` 추가 (v5.4)
 - 슬랙 공유 요약 양식: `변경사항`, `디자인 확인 필요`로 나누고 짧게, 경로로 씀 (v5.2)
 - 질문할 때 화면 ID와 함께 화면 이름과 상황을 씀. 이미 정한 것은 다시 묻지 않음 (v5.2)
 - 문체는 개조식. 누가 하는지 쓰고, 들여쓰기로 묶음. 가운데점, 줄표, 원형 숫자, 한자어 축약 라벨 금지. 출력 전 자동 검사 (번호가 이어지는지, ⚠️가 착수 조건에만 있는지도 검사)
@@ -44,7 +46,14 @@ Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬.
 
 zip 안은 `product-spec/` 폴더 하나. 압축을 풀거나 다시 묶지 않고 그대로 올림
 
-### Claude Code
+### Claude Code (플러그인 마켓플레이스)
+
+```
+/plugin marketplace add wanteddev/claude-skills
+/plugin install product-spec@{마켓플레이스 이름}
+```
+
+### Claude Code (직접 설치)
 
 Claude Code에 URL을 주고 설치를 요청
 
@@ -101,6 +110,8 @@ export ATLASSIAN_SITE="wantedlab.atlassian.net"
     diagram.md                  다이어그램 규칙과 삽입 경로
     confluence.md               게시, 갱신, 충돌 검사, 인라인 댓글
     writing-style.md            문체와 금지어
+    wireframe.md                한 장짜리 WDS 와이어프레임 규칙
+    wireframe-template.html     와이어프레임 양식 (WDS 토큰, 동작 속성)
   scripts/
     lint_spec.py                문체 검사
     render_diagram.sh           Mermaid → PNG
@@ -122,4 +133,6 @@ bash tests/run.sh
 - 예시 문서 3개가 lint를 통과하는지
 - 일부러 틀린 가상 문서(`tests/fixtures/bad-spec.md`)가 검사 항목마다 걸리는지
 - 변환기가 lint 위반 문서를 막고 정상 문서는 변환하는지
+- 와이어프레임 양식의 화면 이동, 강조, 모달 연결이 실제 id를 가리키는지
+- skill-files 목록의 파일이 모두 있는지
 - 스킬 파일을 고친 뒤 커밋 전에 돌림

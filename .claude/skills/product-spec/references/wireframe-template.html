@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>와이어프레임: 커리어 세미나 신청 (가상 예시)</title>
+<!--
+  와이어프레임 양식. references/wireframe.md를 먼저 읽고 쓴다
+  - 외부 CDN, 폰트 파일, 이미지 없음. 이 파일 하나로 열림
+  - 색, 글자 크기, 둥글기는 WDS(Montage) 토큰 값. 새 색을 만들지 않는다
+  - 아래 예시 화면 2개(U1, U2)를 지우고 스펙의 화면 표 순서대로 <section class="screen">을 채운다
+  - 컴포넌트 클래스 목록은 맨 아래 「컴포넌트 클래스」 주석
+-->
+<style>
+:root {
+  /* WDS semantic, light (Montage list_tokens lightResolvedValue) */
+  --fg-primary: #171719;
+  --fg-secondary: #2E2F33E0;
+  --fg-tertiary: #37383C9C;
+  --fg-quaternary: #37383C47;
+  --fg-brand: #0066FF;
+  --fg-negative: #FF4242;
+  --fg-positive: #00BF40;
+  --fg-disable: #37383C29;
+  --bg-primary: #ffffff;
+  --bg-secondary: #F7F7F8;
+  --surface-secondary: #70737C14;
+  --surface-strong: #70737C29;
+  --surface-brand: #0066FF;
+  --surface-brand-strong: #005EEB;
+  --surface-brand-subtle: #0066FF0D;
+  --surface-negative: #FF424214;
+  --surface-disable: #F4F4F5;
+  --line-primary: #70737C38;
+  --line-secondary: #70737C29;
+  --line-tertiary: #70737C14;
+  --line-brand-focus: #0066FF1F;
+  --line-negative: #FF42426E;
+  --dimmer: #17171985;
+  --shadow-small: 0px 2px 4px -2px #1717170F, 0px 4px 6px -1px #1717170F;
+  --shadow-medium: 0px 4px 6px -2px #17171712, 0px 10px 15px -3px #17171712;
+  --radius-8: 8px; --radius-10: 10px; --radius-12: 12px; --radius-16: 16px; --radius-full: 9999px;
+  --font: 'Pretendard', 'Pretendard Variable', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: var(--font); color: var(--fg-primary); background: var(--bg-primary); -webkit-font-smoothing: antialiased; }
+
+/* 문서 레이아웃: 한 장짜리 페이지 */
+.doc { display: grid; grid-template-columns: 220px minmax(0, 1fr); max-width: 1200px; margin: 0 auto; }
+.toc { position: sticky; top: 0; height: 100vh; overflow: auto; padding: 40px 16px; border-right: 1px solid var(--line-tertiary); font-size: 14px; }
+.toc a { display: block; padding: 6px 8px; border-radius: var(--radius-8); color: var(--fg-secondary); text-decoration: none; }
+.toc a:hover, .toc a.on { background: var(--surface-secondary); color: var(--fg-primary); }
+.toc .toc-group { margin: 16px 8px 4px; font-size: 12px; color: var(--fg-tertiary); }
+main { padding: 56px 48px 120px; max-width: 960px; }
+.doc-title { font-size: 32px; line-height: 1.3; font-weight: 700; margin: 0 0 8px; }
+.doc-meta { font-size: 14px; color: var(--fg-tertiary); margin-bottom: 24px; }
+.callout { display: flex; gap: 8px; padding: 12px 16px; border-radius: var(--radius-12); background: var(--bg-secondary); font-size: 14px; color: var(--fg-secondary); margin-bottom: 40px; }
+.screen { padding-top: 32px; margin-top: 32px; border-top: 1px solid var(--line-tertiary); scroll-margin-top: 16px; }
+.screen h2 { font-size: 22px; margin: 0 0 4px; }
+.screen .entry { font-size: 14px; color: var(--fg-tertiary); margin-bottom: 12px; }
+.screen ul.req { margin: 0 0 20px; padding-left: 20px; font-size: 15px; line-height: 1.6; color: var(--fg-secondary); }
+.screen ul.req li[data-target] { cursor: pointer; }
+.screen ul.req li[data-target]:hover { color: var(--fg-brand); }
+.stage { display: flex; justify-content: center; padding: 32px 16px; border-radius: var(--radius-16); background: var(--bg-secondary); }
+.frame { width: 375px; min-height: 640px; background: var(--bg-primary); border-radius: 24px; box-shadow: var(--shadow-medium); overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.frame.pc { width: 100%; max-width: 860px; min-height: 480px; border-radius: var(--radius-12); }
+.frame .body { flex: 1; padding: 16px 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.hl { outline: 2px solid var(--fg-brand); outline-offset: 2px; transition: outline-color .2s; }
+.flash { animation: flash 1.2s ease; }
+@keyframes flash { 0%, 60% { box-shadow: 0 0 0 4px var(--line-brand-focus); } 100% { box-shadow: none; } }
+.note { font-size: 12px; color: var(--fg-tertiary); }
+
+/* WDS 컴포넌트 (Montage 이름을 따름) */
+.w-topnav { height: 56px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--line-tertiary); font-size: 17px; font-weight: 600; }
+.w-topnav .back { width: 32px; height: 32px; border: 0; background: none; font-size: 20px; color: var(--fg-primary); cursor: pointer; }
+.w-btn { font: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 0; cursor: pointer; font-weight: 600; border-radius: var(--radius-10); height: 40px; padding: 0 20px; font-size: 15px; }
+.w-btn.large { height: 48px; padding: 0 28px; font-size: 16px; border-radius: var(--radius-12); }
+.w-btn.small { height: 32px; padding: 0 14px; font-size: 14px; border-radius: var(--radius-8); }
+.w-btn.full { width: 100%; }
+.w-btn.solid.primary { background: var(--surface-brand); color: #fff; }
+.w-btn.solid.assistive { background: var(--surface-secondary); color: var(--fg-primary); }
+.w-btn.solid.negative { background: var(--fg-negative); color: #fff; }
+.w-btn.outlined.primary { background: none; color: var(--fg-brand); box-shadow: inset 0 0 0 1px var(--line-primary); }
+.w-btn.outlined.assistive { background: none; color: var(--fg-primary); box-shadow: inset 0 0 0 1px var(--line-primary); }
+.w-btn:disabled { background: var(--surface-disable); color: var(--fg-disable); box-shadow: none; cursor: default; }
+.w-textbtn { font: inherit; border: 0; background: none; color: var(--fg-brand); font-weight: 600; font-size: 14px; cursor: pointer; padding: 0; }
+.w-field { display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.w-field label { font-weight: 600; color: var(--fg-secondary); }
+.w-field input, .w-field textarea, .w-field select { font: inherit; font-size: 16px; padding: 12px; border-radius: var(--radius-12); border: 0; box-shadow: inset 0 0 0 1px var(--line-primary); background: var(--bg-primary); color: var(--fg-primary); }
+.w-field input:focus, .w-field textarea:focus { outline: none; box-shadow: inset 0 0 0 1px var(--fg-brand), 0 0 0 3px var(--line-brand-focus); }
+.w-field.invalid input, .w-field.invalid textarea { box-shadow: inset 0 0 0 1px var(--fg-negative); }
+.w-field .msg { font-size: 13px; color: var(--fg-negative); display: none; }
+.w-field.invalid .msg { display: block; }
+.w-search { display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: var(--radius-10); background: var(--surface-secondary); color: var(--fg-tertiary); font-size: 15px; }
+.w-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--line-tertiary); }
+.w-tab { font: inherit; border: 0; background: none; padding: 12px 0; font-size: 16px; font-weight: 600; color: var(--fg-tertiary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.w-tab.on { color: var(--fg-primary); border-bottom-color: var(--fg-primary); }
+.w-tabpanel { display: none; flex-direction: column; gap: 12px; }
+.w-tabpanel.on { display: flex; }
+.w-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.w-chip { font: inherit; height: 32px; padding: 0 12px; border-radius: var(--radius-full); border: 0; box-shadow: inset 0 0 0 1px var(--line-primary); background: var(--bg-primary); font-size: 14px; color: var(--fg-secondary); cursor: pointer; }
+.w-chip.on { background: var(--fg-primary); color: #fff; box-shadow: none; }
+.w-card { display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.w-thumb { aspect-ratio: 16 / 9; border-radius: var(--radius-12); background: var(--surface-secondary); display: flex; align-items: center; justify-content: center; color: var(--fg-quaternary); font-size: 13px; }
+.w-card .title { font-size: 16px; font-weight: 600; }
+.w-card .caption { font-size: 13px; color: var(--fg-tertiary); }
+.w-list { display: flex; flex-direction: column; }
+.w-list .cell { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--line-tertiary); font-size: 15px; cursor: pointer; }
+.w-badge { align-self: flex-start; display: inline-flex; align-items: center; height: 22px; padding: 0 6px; border-radius: 6px; font-size: 12px; font-weight: 600; background: var(--surface-secondary); color: var(--fg-secondary); }
+.w-badge.brand { background: var(--surface-brand-subtle); color: var(--fg-brand); }
+.w-badge.negative { background: var(--surface-negative); color: var(--fg-negative); }
+.w-section-msg { padding: 12px 14px; border-radius: var(--radius-12); background: var(--bg-secondary); font-size: 14px; color: var(--fg-secondary); }
+.w-skel { height: 14px; border-radius: 6px; background: var(--surface-secondary); }
+.w-bottombar { padding: 12px 20px 20px; border-top: 1px solid var(--line-tertiary); background: var(--bg-primary); }
+.w-bottomnav { display: flex; justify-content: space-around; height: 56px; align-items: center; border-top: 1px solid var(--line-tertiary); font-size: 11px; color: var(--fg-tertiary); }
+.w-modal { position: absolute; inset: 0; background: var(--dimmer); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 5; }
+.w-modal.on { display: flex; }
+.w-modal .box { background: var(--bg-primary); border-radius: var(--radius-16); padding: 24px 20px 16px; width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 8px; }
+.w-modal .box h3 { margin: 0; font-size: 18px; }
+.w-modal .actions { display: flex; gap: 8px; margin-top: 12px; }
+.w-modal .actions .w-btn { flex: 1; }
+.w-sheet { position: absolute; inset: 0; background: var(--dimmer); display: none; align-items: flex-end; z-index: 5; }
+.w-sheet.on { display: flex; }
+.w-sheet .box { width: 100%; background: var(--bg-primary); border-radius: 20px 20px 0 0; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.w-toast { position: absolute; left: 20px; right: 20px; bottom: 88px; padding: 12px 16px; border-radius: var(--radius-12); background: #1B1C1E; color: #F7F7F8; font-size: 14px; display: none; z-index: 6; }
+.w-toast.on { display: block; }
+
+@media (max-width: 900px) {
+  .doc { grid-template-columns: 1fr; }
+  .toc { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line-tertiary); padding: 16px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .toc .toc-group { width: 100%; margin: 8px 0 0; }
+  main { padding: 32px 16px 80px; }
+  .frame { width: 100%; max-width: 375px; }
+}
+</style>
+</head>
+<body>
+<div class="doc">
+  <nav class="toc" id="toc">
+    <div class="toc-group">유저향 화면</div>
+    <a href="#U1">U1. 세미나 목록</a>
+    <a href="#U2">U2. 세미나 상세</a>
+  </nav>
+  <main>
+    <h1 class="doc-title">커리어 세미나 신청 (가상 예시)</h1>
+    <div class="doc-meta">스펙: docs/specs/career-seminar/spec.md / 스펙 2026-10-26 기준</div>
+    <div class="callout">와이어프레임입니다. 화면 구성과 이동만 보여주고, 시각 디자인은 디자인 시안에서 정합니다. 파란 글자로 바뀌는 요구사항을 누르면 해당 요소를 표시합니다</div>
+
+    <!-- 화면 하나 = section 하나. id는 스펙 화면 ID(U1, A1, W1). 요구사항 li는 스펙 문구 그대로, data-target은 프레임 안 요소 id -->
+    <section class="screen" id="U1">
+      <h2>U1. 세미나 목록</h2>
+      <div class="entry">진입점: GNB 커리어 > 세미나</div>
+      <ul class="req">
+        <li data-target="u1-tabs">모집 중, 마감 탭으로 나눠 보여줌. 처음 고른 탭은 모집 중</li>
+        <li data-target="u1-card1">카드를 누르면 세미나 상세(U2)로 이동</li>
+        <li>정렬 기준 (PO 확인 필요)</li>
+      </ul>
+      <div class="stage">
+        <div class="frame">
+          <div class="w-topnav">세미나</div>
+          <div class="body">
+            <div class="w-tabs" id="u1-tabs" data-tabs>
+              <button class="w-tab on" data-tab="u1-open">모집 중</button>
+              <button class="w-tab" data-tab="u1-closed">마감</button>
+            </div>
+            <div class="w-tabpanel on" id="u1-open">
+              <div class="w-card" id="u1-card1" data-go="U2">
+                <div class="w-thumb">썸네일</div>
+                <span class="w-badge brand">모집 중</span>
+                <div class="title">세미나 제목</div>
+                <div class="caption">11월 12일 (수) 19:00 / 온라인</div>
+              </div>
+              <div class="w-card" data-go="U2">
+                <div class="w-thumb">썸네일</div>
+                <span class="w-badge brand">모집 중</span>
+                <div class="title">세미나 제목</div>
+                <div class="caption">11월 19일 (수) 19:00 / 오프라인</div>
+              </div>
+            </div>
+            <div class="w-tabpanel" id="u1-closed">
+              <div class="w-section-msg">마감된 세미나 목록 (문구 워싱 필요)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="U2">
+      <h2>U2. 세미나 상세</h2>
+      <div class="entry">진입점: 세미나 목록(U1) 카드</div>
+      <ul class="req">
+        <li data-target="u2-apply">신청하기를 누르면 확인 창을 띄움</li>
+        <li data-target="u2-memo">신청 메모는 필수 입력</li>
+        <li>정원이 차면 버튼이 대기 신청으로 바뀜 (시연 칩으로 전환)</li>
+      </ul>
+      <div class="stage">
+        <div class="frame">
+          <div class="w-topnav"><button class="back" data-go="U1" aria-label="뒤로">‹</button>세미나 상세</div>
+          <div class="body">
+            <div class="w-chips" title="실제 화면에 없는 시연용 요소">
+              <span class="note">시연:</span>
+              <button class="w-chip on" data-state="u2" data-value="open">정원 남음</button>
+              <button class="w-chip" data-state="u2" data-value="full">정원 참</button>
+            </div>
+            <div class="w-thumb">대표 이미지</div>
+            <div style="font-size:20px;font-weight:700">세미나 제목</div>
+            <div class="w-skel" style="width:80%"></div>
+            <div class="w-skel" style="width:60%"></div>
+            <div class="w-field" id="u2-memo" data-required>
+              <label for="u2-memo-in">신청 메모</label>
+              <textarea id="u2-memo-in" rows="3" placeholder="(문구 워싱 필요)"></textarea>
+              <span class="msg">신청 메모를 입력해 주세요 (문구 워싱 필요)</span>
+            </div>
+          </div>
+          <div class="w-bottombar">
+            <button class="w-btn solid primary large full" id="u2-apply" data-validate="u2-memo" data-open="u2-confirm" data-show-when="u2:open">신청하기</button>
+            <button class="w-btn outlined primary large full" data-toast="u2-toast" data-show-when="u2:full">대기 신청하기</button>
+          </div>
+          <div class="w-modal" id="u2-confirm">
+            <div class="box">
+              <h3>신청할까요?</h3>
+              <div class="note">(문구 워싱 필요)</div>
+              <div class="actions">
+                <button class="w-btn solid assistive" data-close>취소</button>
+                <button class="w-btn solid primary" data-close data-toast="u2-toast">신청</button>
+              </div>
+            </div>
+          </div>
+          <div class="w-toast" id="u2-toast">신청했어요 (문구 워싱 필요)</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  // 다른 화면으로 이동: 해당 섹션으로 스크롤하고 프레임을 잠깐 강조
+  function go(id) {
+    var sec = document.getElementById(id);
+    if (!sec) return;
+    sec.scrollIntoView({ block: 'start' });
+    var f = $('.frame', sec);
+    if (f) { f.classList.remove('flash'); void f.offsetWidth; f.classList.add('flash'); }
+  }
+
+  function toast(id) {
+    var t = document.getElementById(id);
+    if (!t) return;
+    t.classList.add('on');
+    setTimeout(function () { t.classList.remove('on'); }, 1600);
+  }
+
+  function validate(fieldId) {
+    var f = document.getElementById(fieldId);
+    if (!f) return true;
+    var input = $('input, textarea, select', f);
+    var ok = input && input.value.trim() !== '';
+    f.classList.toggle('invalid', !ok);
+    if (!ok && input) input.focus();
+    return ok;
+  }
+
+  // 시연 상태: data-state 칩을 누르면 data-show-when="그룹:값" 요소만 보임
+  function applyState(group, value) {
+    $$('[data-state="' + group + '"]').forEach(function (c) { c.classList.toggle('on', c.dataset.value === value); });
+    $$('[data-show-when^="' + group + ':"]').forEach(function (el) {
+      el.style.display = el.dataset.showWhen === group + ':' + value ? '' : 'none';
+    });
+  }
+  $$('[data-state]').forEach(function (c) { if (c.classList.contains('on')) applyState(c.dataset.state, c.dataset.value); });
+
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('button, [data-go], [data-target], [data-tab]');
+    if (!el) return;
+    if (el.dataset.tab) {
+      var wrap = el.closest('[data-tabs]');
+      $$('.w-tab', wrap).forEach(function (t) {
+        var on = t === el;
+        t.classList.toggle('on', on);
+        var p = document.getElementById(t.dataset.tab);
+        if (p) p.classList.toggle('on', on);
+      });
+      return;
+    }
+    if (el.dataset.state) { applyState(el.dataset.state, el.dataset.value); return; }
+    if (el.matches('li[data-target]')) {
+      var t = document.getElementById(el.dataset.target);
+      if (!t) return;
+      $$('.hl').forEach(function (h) { h.classList.remove('hl'); });
+      t.classList.add('hl');
+      t.scrollIntoView({ block: 'center' });
+      setTimeout(function () { t.classList.remove('hl'); }, 1800);
+      return;
+    }
+    if (el.dataset.validate && !validate(el.dataset.validate)) return;
+    if (el.hasAttribute('data-close')) { var m = el.closest('.w-modal, .w-sheet'); if (m) m.classList.remove('on'); }
+    if (el.dataset.open) { var o = document.getElementById(el.dataset.open); if (o) o.classList.add('on'); }
+    if (el.dataset.toast) toast(el.dataset.toast);
+    if (el.dataset.go) go(el.dataset.go);
+  });
+
+  // 입력하면 오류 표시를 지움
+  document.addEventListener('input', function (e) {
+    var f = e.target.closest('.w-field.invalid');
+    if (f) f.classList.remove('invalid');
+  });
+
+  // 목차: 보고 있는 화면 표시
+  var links = $$('#toc a');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        links.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id); });
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    $$('.screen').forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+<!--
+  컴포넌트 클래스 (Montage 컴포넌트 이름 → 클래스)
+  - TopNavigation: .w-topnav (뒤로 버튼 .back)
+  - Button: .w-btn + variant(.solid | .outlined) + color(.primary | .assistive | .negative) + size(.small | 기본 | .large) + .full
+  - TextButton: .w-textbtn
+  - TextField, TextArea, Select: .w-field 안에 label, input|textarea|select, .msg(오류 문구)
+  - SearchField: .w-search
+  - Tab: .w-tabs[data-tabs] > .w-tab[data-tab=패널id], 패널은 .w-tabpanel
+  - Chip, FilterButton: .w-chips > .w-chip(.on)
+  - Card: .w-card > .w-thumb, .title, .caption
+  - List: .w-list > .cell
+  - ContentBadge: .w-badge(.brand | .negative)
+  - SectionMessage: .w-section-msg
+  - Skeleton: .w-skel (본문 텍스트 자리)
+  - BottomNavigation: .w-bottomnav, 하단 고정 버튼 영역: .w-bottombar
+  - Modal, Alert: .w-modal > .box, 바텀시트: .w-sheet > .box
+  - Toast, Snackbar: .w-toast
+  동작 속성
+  - data-go="화면ID": 그 화면 섹션으로 이동
+  - data-open="모달id", data-close: 모달, 시트 열고 닫기
+  - data-validate="필드id": 필수 입력 검사 뒤 다음 동작
+  - data-toast="토스트id": 토스트 1.6초 표시
+  - data-state="그룹" data-value="값" + data-show-when="그룹:값": 시연 칩으로 상태별 화면 전환
+  - 요구사항 li[data-target="요소id"]: 누르면 그 요소를 강조
+-->
+</body>
+</html>
