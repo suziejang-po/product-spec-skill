@@ -280,11 +280,12 @@ h1.title { margin: 4px 0 0; font-size: 24px; font-weight: 700; }
     if (!target || !target.classList.contains('screen')) target = screens[0];
     screens.forEach(function (s) { s.classList.toggle('on', s === target); });
     $$('#demo-screens button').forEach(function (b) { b.classList.toggle('on', b.dataset.go === target.id); });
-    if (location.hash !== '#/' + target.id) history.replaceState(null, '', '#/' + target.id);
-    window.scrollTo(0, 0);
+    // 주소 바꾸기는 덤. 미리보기 창, 아티팩트처럼 격리된 화면에서는 막히므로 실패해도 화면 전환은 계속
+    try { if (location.hash !== '#/' + target.id) history.replaceState(null, '', '#/' + target.id); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
   }
   // 주소는 #/화면id. #화면id로 쓰면 브라우저가 그 요소 위치로 스크롤함
-  function fromHash() { return location.hash.replace(/^#\/?/, ''); }
+  function fromHash() { try { return location.hash.replace(/^#\/?/, ''); } catch (e) { return ''; } }
   window.addEventListener('hashchange', function () { show(fromHash()); });
   show(fromHash());
 
