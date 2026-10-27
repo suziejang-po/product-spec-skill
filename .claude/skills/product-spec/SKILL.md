@@ -2,7 +2,7 @@
 name: product-spec
 description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '변경 표시 프로토타입 만들어줘', '/product-spec' 요청에 쓴다. 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 회고, 미팅록에는 안 씀
 ---
-<!-- skill-version: 5.4.0 / skill-repo: suziejang-po/product-spec-skill -->
+<!-- skill-version: 5.4.1 / skill-repo: wanteddev/claude-skills (plugins/product-spec) -->
 
 # Product Spec 생성 에이전트 v5.4
 
@@ -37,14 +37,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 ## 시작 전 준비
 
 1. 스킬 폴더 확인. 지금 로드된 이 SKILL.md의 실제 경로를 찾아 그 폴더를 `SKILL_DIR`로 삼는다 (설치 위치가 환경마다 다르므로 경로를 하드코딩하지 않는다). 아래의 `{SKILL_DIR}/scripts/...`는 전부 이 값으로 바꿔 실행
-2. 버전 확인 (1회)
-   ```bash
-   curl -sf "https://raw.githubusercontent.com/suziejang-po/product-spec-skill/main/.claude/skills/product-spec/SKILL.md" | head -8 | grep -o 'skill-version: [0-9.]*'
-   ```
-   - 원격 버전이 로컬보다 크면(숫자 세 자리를 각각 비교) 진행 전에 묻는다: "product-spec 스킬이 최신이 아닙니다 (로컬 {로컬} → 최신 {원격}). 1) 업데이트하고 진행 2) 지금 버전으로 진행". 1이면 아래 3번 절차로 갱신한 뒤 새 SKILL.md를 다시 읽고 시작. 갱신할 수 없는 환경(Claude 앱 등)이면 "레포의 dist/product-spec.zip을 다시 올려 주세요" 안내 후 작성자가 고른 대로 진행
-   - 같거나 로컬이 더 크면 아무것도 출력하지 않음
-   - 확인에 실패하면(네트워크 차단 등) 한 줄만: "최신 버전을 확인하지 못했습니다 (로컬 {로컬})"
-3. "스킬 업데이트해줘" 요청 시: 원격 SKILL.md를 임시 파일로 받아 맨 아래 「skill-files」 목록이 있는지 확인. 없으면 "원격 스킬이 v4 구조가 아니라 갱신을 중단했습니다"로 끝. 있으면 `SKILL_DIR`를 `SKILL_DIR.bak.{YYYYMMDD-HHMMSS}`로 복사한 뒤 목록의 파일을 같은 상대 경로로 내려받아 덮어씀. 쓰기 불가 환경이면 시도하지 않고 담당자 안내만. 성공하면 "스킬을 {버전}으로 갱신했습니다. 새 지침은 다음 실행부터 적용됩니다"
+2. 업데이트는 설치한 방식대로 한다. 플러그인으로 설치했으면 `/plugin update product-spec`, 그 밖의 설치는 스킬 관리자에게 최신 파일을 받는다. 스킬이 스스로 원격 파일을 받아 덮어쓰지 않는다
 
 ## 산출물 위치
 
@@ -208,7 +201,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 
 ## skill-files
 
-스킬 업데이트 때 내려받는 파일 목록. 파일을 더하거나 빼면 이 목록도 고친다
+스킬에 들어 있는 파일 목록. 파일을 더하거나 빼면 이 목록도 고친다 (tests/run.sh가 대조함)
 
 - SKILL.md
 - references/template.md

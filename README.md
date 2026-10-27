@@ -1,4 +1,4 @@
-# product-spec-skill (v5.4.0)
+# product-spec-skill (v5.4.1)
 
 Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬. 원본 레포를 포크해 v4, v5로 재구성
 
@@ -37,29 +37,23 @@ Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬.
 
 ## 설치
 
+배포 정본은 사내 마켓플레이스 `wanteddev/claude-skills`의 `plugins/product-spec`. 이 레포는 개발용 (비공개)
+
+### Claude Code
+
+```
+/plugin marketplace add wanteddev/claude-skills
+/plugin install product-spec@claude-skills
+```
+
 ### Claude 앱 (claude.ai, 데스크톱 앱)
 
-1. [dist/product-spec.zip](dist/product-spec.zip)을 내려받음 (Download raw file)
+1. 스킬 관리자에게 `dist/product-spec.zip`을 받음
 2. 설정 > 기능(Capabilities)에서 코드 실행을 켬
 3. 같은 화면의 스킬에서 zip 업로드
 4. 채팅에서 "스펙 작성해줘"로 호출
 
 zip 안은 `product-spec/` 폴더 하나. 압축을 풀거나 다시 묶지 않고 그대로 올림
-
-### Claude Code (플러그인 마켓플레이스)
-
-```
-/plugin marketplace add wanteddev/claude-skills
-/plugin install product-spec@{마켓플레이스 이름}
-```
-
-### Claude Code (직접 설치)
-
-Claude Code에 URL을 주고 설치를 요청
-
-> 이 스킬 설치해줘 https://github.com/suziejang-po/product-spec-skill
-
-또는 레포의 `.claude/skills/product-spec` 폴더를 `~/.claude/skills/` 아래에 복사
 
 Node.js가 있어야 다이어그램을 그린다
 
@@ -122,7 +116,9 @@ export ATLASSIAN_SITE="wantedlab.atlassian.net"
 
 ## 업데이트
 
-실행 시 원격 버전을 확인해 로컬이 낮으면 업데이트하고 진행할지 묻는다. "스킬 업데이트해줘"라고 하면 `SKILL.md`의 `skill-files` 목록 전체를 내려받아 갱신한다
+- 플러그인: `/plugin update product-spec`
+- 이 레포를 고친 뒤 마켓플레이스 반영: `register-product-spec.sh` 다시 실행 → wanteddev/claude-skills에 PR
+- 스킬이 스스로 원격 파일을 받아 덮어쓰지 않음 (v5.4.1에서 뺌)
 
 ## 스킬 점검 (관리자용)
 
