@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# product-spec 스킬을 wanteddev/claude-skills 마켓플레이스에 등록하는 PR을 만든다
+# product-spec 스킬을 wanteddev/claude-skills 마켓플레이스에 등록하거나 갱신하는 PR을 만든다
 # 필요: git, gh(로그인된 상태), python3. wanteddev/claude-skills 쓰기 권한
 # 실행: bash register-product-spec.sh
 set -euo pipefail
@@ -70,14 +70,15 @@ echo "5/5 브랜치 올리고 PR 만들기"
 cd "$WORK/market"
 git checkout -q -b "$BRANCH"
 git add -A
-git commit -q -m "feat: product-spec 플러그인 추가 (v$VERSION)"
+if git diff --cached --quiet; then echo "   바뀐 내용이 없어 PR을 만들지 않음"; exit 0; fi
+git commit -q -m "feat: product-spec v$VERSION"
 git push -q -u origin "$BRANCH"
 MARKET_NAME="$(python3 -c "import json;print(json.load(open('.claude-plugin/marketplace.json'))['name'])")"
 gh pr create --repo "$MARKET_REPO" --head "$BRANCH" \
-  --title "feat: product-spec 플러그인 추가 (v$VERSION)" \
-  --body "## 추가
-- \`plugins/$PLUGIN\`: Product Spec 작성, 수정, Confluence 게시 스킬 (v$VERSION)
-- 원본: https://github.com/$SKILL_REPO (공개 레포는 마켓플레이스 source로 못 써서 이 레포에 복사함)
+  --title "feat: product-spec v$VERSION" \
+  --body "## 변경
+- \`plugins/$PLUGIN\`을 v$VERSION으로 갱신
+- 개발 레포: $SKILL_REPO (비공개)
 
 ## 설치
 \`\`\`
