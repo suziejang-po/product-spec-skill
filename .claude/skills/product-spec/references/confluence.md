@@ -6,7 +6,7 @@ Atlassian MCP 도구(`createConfluencePage`, `updateConfluencePage`, `getConflue
 
 ## 설정
 
-부모 페이지와 스페이스는 도메인 팩(`docs/spec-context.md`)의 Confluence 설정 표에서 읽는다. 없으면 기본값 spaceKey `WAN`, 작성중 부모 `4808376595`, 출시 확정 부모 `4808212726`. 생성이 권한 오류(403)로 실패하면 "이 스페이스에 페이지를 만들 권한이 없습니다. 개인 스페이스에 만들까요, 아니면 부모 페이지 ID를 알려 주시겠어요?"라고 묻는다
+부모 페이지와 스페이스는 도메인 팩(`docs/spec-context.md`)의 Confluence 설정 표에서 읽는다. 표가 비어 있으면 작성자에게 spaceKey, 작성중 부모 페이지 ID, 출시 확정 부모 페이지 ID를 한 번에 묻고 도메인 팩에 저장한 뒤 진행한다. 회사 기본값은 없다. 생성이 권한 오류(403)로 실패하면 "이 스페이스에 페이지를 만들 권한이 없습니다. 개인 스페이스에 만들까요, 아니면 부모 페이지 ID를 알려 주시겠어요?"라고 묻는다
 
 ## 본문 만들기
 
@@ -28,7 +28,7 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 4. 응답의 pageId를 즉시 로컬 spec.md 첫 줄에 `<!-- Confluence Page ID: {pageId} -->`로 기록하고 저장. 본문 메타 표에는 넣지 않음 (변환기가 주석을 지우므로 Confluence에는 보이지 않음) (이후 단계가 실패해도 페이지를 잃지 않기 위함)
 5. 그림 업로드 → media.json → 본문 재변환 → `updateConfluencePage` (`references/diagram.md`)
 6. 수치 인라인 댓글 (아래)
-7. 안내: "게시: {URL}. 지금은 '제품 출시 미정' 아래 (작성중) 상태입니다. 출시가 확정되면 알려 주세요"
+7. 안내: "게시: {URL}. 지금은 작성중 부모 페이지 아래 (작성중) 상태입니다. 출시가 확정되면 알려 주세요"
 
 실패 복구: 3번 뒤에 실패하면 페이지는 있고 그림이 없는 상태. 다음 실행에서 첫 줄 주석의 Page ID로 갱신 절차를 타면 복구된다. 안내에 "그림 삽입이 실패했습니다. 다시 '게시해줘'라고 하면 이어서 합니다"를 붙인다
 
@@ -82,7 +82,7 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 ## 출시 확정 이동
 
 작성자가 "출시 확정", "작성 완료했어"라고 하면
-1. 확인: "'제품 출시 확정' 아래로 옮길까요? 'yes' / 'cancel'"
+1. 확인: "출시 확정 부모 페이지 아래로 옮길까요? 'yes' / 'cancel'"
 2. yes면 제목에서 `(작성중) ` 제거, `updateConfluencePage`의 parentId를 출시 확정 부모로
 3. 안내: "제목 갱신과 이동 완료"
 

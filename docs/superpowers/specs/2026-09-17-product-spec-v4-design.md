@@ -45,7 +45,7 @@
   - 관련 기존 스펙과 히스토리 링크 (Confluence 검색으로 후보를 먼저 제시)
   - 메뉴 구조 (depth1, depth2)
   - 용어와 코드 식별자 (API 필드, 이벤트명, 컴포넌트명)
-  - 관련 API 스펙 (asp MCP가 있으면 자동 조회)
+  - 관련 API 스펙 (사내 API 스펙 MCP가 있으면 자동 조회)
   - 이벤트명 존재 여부 (Amplitude MCP가 있으면 택소노미 검색으로 확인. 있으면 '기존', 없으면 '신규 제안'으로 표기)
 - 도메인 팩은 같은 프로젝트의 다음 스펙에서 재사용함. 갱신은 작성자가 요청할 때만
 
@@ -133,7 +133,7 @@
 
 ### 삽입 경로 1. 첨부 이미지 (기본)
 
-- 환경변수 `ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`, `ATLASSIAN_SITE`(기본 `wantedlab.atlassian.net`)를 읽음
+- 환경변수 `ATLASSIAN_EMAIL`, `ATLASSIAN_API_TOKEN`, `ATLASSIAN_SITE`(본인 Confluence 호스트, 기본값 없음)를 읽음
 - 없으면 발급 안내를 한 번 출력하고 경로 2로 진행. 안내 내용: id.atlassian.com의 API 토큰 페이지에서 발급, 셸 환경변수로 등록, 토큰은 본인 것만 사용
 - 업로드: `POST /wiki/rest/api/content/{pageId}/child/attachment`, 헤더 `X-Atlassian-Token: nocheck`, Basic 인증(이메일:토큰), multipart 파일
 - 응답의 미디어 ID와 컬렉션(`contentId-{pageId}`)으로 본문에 `media-single` figure를 넣음. 폭은 percentage 80 (⚠️ 응답 필드에서 미디어 ID를 어디서 읽는지 구현 시 실측 확인)

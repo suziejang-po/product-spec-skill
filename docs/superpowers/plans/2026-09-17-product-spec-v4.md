@@ -90,10 +90,10 @@
 - Test: lint OK
 
 **Interfaces:**
-- Produces: `docs/spec-context.md` 양식(섹션: 서비스와 화면, 메뉴 구조, 관련 문서, 용어와 코드 식별자, API, 이벤트)과 수집 질문 5개, 자동 조회 절차(Confluence CQL 검색, asp MCP, Amplitude 택소노미 검색)
+- Produces: `docs/spec-context.md` 양식(섹션: 서비스와 화면, 메뉴 구조, 관련 문서, 용어와 코드 식별자, API, 이벤트)과 수집 질문 5개, 자동 조회 절차(Confluence CQL 검색, 사내 API 스펙 MCP, Amplitude 택소노미 검색)
 
 - [ ] **Step 1: 양식 작성.** 각 섹션의 표 열을 정한다. 용어 표는 template.md의 용어 표와 열이 같아야 한다(용어, 뜻, 코드 식별자 (출처))
-- [ ] **Step 2: 자동 조회 절차.** MCP 도구 이름을 적는다: `searchConfluenceUsingCql`(제목과 본문 키워드, 최근 1년), asp MCP(있으면 API 검색), Amplitude `search_amp_data_taxonomy`(이벤트명 존재 확인). 도구가 없으면 건너뛰고 작성자에게 묻는다
+- [ ] **Step 2: 자동 조회 절차.** MCP 도구 이름을 적는다: `searchConfluenceUsingCql`(제목과 본문 키워드, 최근 1년), 사내 API 스펙 MCP(있으면 API 검색), Amplitude `search_amp_data_taxonomy`(이벤트명 존재 확인). 도구가 없으면 건너뛰고 작성자에게 묻는다
 - [ ] **Step 3: 수집 질문 5개**를 선택지형 포함으로 적는다. 답을 받으면 양식에 채워 저장하고, 다음 실행부터 재사용
 - [ ] **Step 4: lint 후 Commit.** `git commit -m "feat: 도메인 팩 양식과 수집 절차"`
 
@@ -114,7 +114,7 @@
 
 - [ ] **Step 1: render_diagram.sh.** `npx -y @mermaid-js/mermaid-cli -i "$1" -o "$2" -b white $OPTS`. 모드별 OPTS. npx 미설치면 안내 후 종료 코드 1
 - [ ] **Step 2: mermaid_macro.py.** 설계 문서 「삽입 경로 2」의 macroParams(size medium, isEditable true, diagramCode, caption 빈 값, theme default, lastEdited 현재 UTC ISO, diagramType mermaid, `__bodyContent` PNG base64)와 macroMetadata(schemaVersion 1, placeholder 아이콘 `https://confluence.mermaidchart.com/icon_80x80.png`, title `Mermaid chart`)를 JSON으로 만들고 `html.escape(json.dumps(..., ensure_ascii=False), quote=True)`로 data-parameters에 넣는다
-- [ ] **Step 3: confluence_attach.sh.** `curl -sS -u "$ATLASSIAN_EMAIL:$ATLASSIAN_API_TOKEN" -H "X-Atlassian-Token: nocheck" -F "file=@$2" "https://${ATLASSIAN_SITE:-wantedlab.atlassian.net}/wiki/rest/api/content/$1/child/attachment?allowDuplicated=false"`. 같은 파일명이 있으면(HTTP 400) `GET .../child/attachment?filename=` 으로 id를 찾아 `POST .../child/attachment/{id}/data`로 새 버전 업로드. 응답 JSON에서 `results[0].extensions.fileId`를 mediaId로 출력 (⚠️ 실측으로 필드명 확정. 없으면 `results[0].id`와 다운로드 링크를 함께 출력하고 diagram.md에 확인 결과를 적음)
+- [ ] **Step 3: confluence_attach.sh.** `curl -sS -u "$ATLASSIAN_EMAIL:$ATLASSIAN_API_TOKEN" -H "X-Atlassian-Token: nocheck" -F "file=@$2" "https://${ATLASSIAN_SITE}/wiki/rest/api/content/$1/child/attachment?allowDuplicated=false"`. ATLASSIAN_SITE는 본인 Confluence 호스트, 회사 기본값 없음. 같은 파일명이 있으면(HTTP 400) `GET .../child/attachment?filename=` 으로 id를 찾아 `POST .../child/attachment/{id}/data`로 새 버전 업로드. 응답 JSON에서 `results[0].extensions.fileId`를 mediaId로 출력 (⚠️ 실측으로 필드명 확정. 없으면 `results[0].id`와 다운로드 링크를 함께 출력하고 diagram.md에 확인 결과를 적음)
 - [ ] **Step 4: 렌더 테스트.** `bash scripts/render_diagram.sh docs/samples/diagrams/preferred-location-flow.mmd /tmp/t.png macro && python3 -c "import struct;b=open('/tmp/t.png','rb').read();print(struct.unpack('>II',b[16:24]))"` → 폭이 600 근처(300 x 2)
 - [ ] **Step 5: 매크로 테스트.** `python3 scripts/mermaid_macro.py docs/samples/diagrams/preferred-location-flow.mmd /tmp/t.png | head -c 300` → `data-extension-key="mermaid"` 포함, 파이썬 `html.unescape` 후 `json.loads` 성공
 - [ ] **Step 6: 첨부 테스트.** 토큰이 없으면 종료 코드 2와 안내 문구 확인만. 있으면 개인 스페이스 테스트 페이지에 업로드하고 mediaId를 받아 `updateConfluencePage`로 figure를 넣어 그림 표시 확인
@@ -134,7 +134,7 @@
 
 - [ ] **Step 1: md_to_confluence.py.** 표준 라이브러리만. 지원 요소: 제목(h1~h3), 문단, 불릿, 번호 목록, 표(첫 열이 `#`이면 `data-display-mode="fixed"`와 첫 열 `data-colwidth="40"`), 인라인 코드, 굵게, 링크, 이미지(`![alt](diagrams/x.png)`). 셀 안 `<br>` 유지. 변환 직전 치환 필터(`·`→`/`, `—`→`,`, `①`→`1.` 등)
 - [ ] **Step 2: 변환 테스트.** 샘플로 실행해 `data-colwidth="40"`, `<figure data-type="media-single"` 또는 `data-extension-key="mermaid"` 포함 확인. 출력에 금지 기호 없음
-- [ ] **Step 3: confluence.md.** 기존 SKILL.md의 Phase 3(케이스 A, B, C), 안전 절차(재읽기, 버전 검증), 부모 페이지 ID(작성중 4808376595, 출시 확정 4808212726), 제목 규칙을 옮기고, 수치 인라인 댓글 절차(`createConfluenceInlineComment`, 대상 텍스트는 수치 문자열, 본문은 근거 링크나 쿼리)를 추가
+- [ ] **Step 3: confluence.md.** 기존 SKILL.md의 Phase 3(케이스 A, B, C), 안전 절차(재읽기, 버전 검증), 부모 페이지 ID(도메인 팩의 Confluence 설정, 없으면 작성자에게 물음), 제목 규칙을 옮기고, 수치 인라인 댓글 절차(`createConfluenceInlineComment`, 대상 텍스트는 수치 문자열, 본문은 근거 링크나 쿼리)를 추가
 - [ ] **Step 4: Commit.** `git commit -m "feat: Confluence 변환 스크립트와 게시 절차"`
 
 ### Task 7: SKILL.md 재작성
@@ -187,7 +187,7 @@ Task 1~8 완료 후 Task 9(검증 실행 에이전트)와 Task 10(적대적 리�
 
 Task 9 결과
 - 안 좋은 예 페이지(4914709425)만 자료로 주고 Phase 0~4 실행. lint 통과, 5열 표 6행, 흐름도 렌더 1.5초, ⚠️ 28건
-- 도구: getConfluencePage와 CQL 검색 동작, Amplitude 택소노미로 이벤트 8종 확인(기존 5, 신규 3, 미확인 1), asp MCP 없음
+- 도구: getConfluencePage와 CQL 검색 동작, Amplitude 택소노미로 이벤트 8종 확인(기존 5, 신규 3, 미확인 1), 사내 API 스펙 MCP 없음
 - 지침 결함 18건 보고. 주요: 셀 3줄 규칙과 예시 불일치, 도메인 팩 서비스명 정의 없음, 식별자 미확인 처리 규칙 없음, 메타 질문 없음, 실험 설계 자리 없음, 출처 요약의 최종 위치 없음, 비대화 환경의 채팅 출력 대체 없음
 - 출처 규칙이 막은 추론 6건 기록(유저 니즈 유추, fail-safe 기본값, 닫기 버튼 확정, 플랫폼, DRI, URL)
 

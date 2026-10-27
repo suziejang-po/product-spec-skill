@@ -1,24 +1,23 @@
-# product-spec-skill (v5.4.0)
+# product-spec-skill (v5.4.1)
 
 Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬. 원본 레포를 포크해 v4, v5로 재구성
 
 ## 출처
 
-아래 두 가지를 기반으로 발전시켰다
+원본 레포를 포크해 발전시켰다
 
-- 기존 스펙 문서: [Product Spec Claude Skill](https://wantedlab.atlassian.net/wiki/spaces/~71202040d3ee88a99a4ff7a2114eff1430dbd8/pages/4777082907/Product+Spec+Claude+Skill) (사내 Confluence, 원티드 계정 로그인 필요)
 - 원본 레포: [hyeongkeunpark-bit/product-spec-skill](https://github.com/hyeongkeunpark-bit/product-spec-skill)
 
 ## 변경사항
 
 - 출처 있는 내용만 쓴다. 코드, 첨부 자료, 대화, 기존 문서에 없는 도메인 서술은 빈칸으로 두고 질문한다
 - 골격 초안을 먼저 보여주고, 리뷰 체크리스트(문제 근거, 가설과 KR, 사용자와 권한, 정책, 시나리오, 기능 상세, UI, 데이터 연동)로 빈 곳을 찾아 한 번에 5개 안팎씩 기본 2회 묻는다. 착수를 막는 항목이 남으면 한 번 더 제안
-- 섹션 순서: 개요, 용어, 서비스 구조, 플로우, 유저향 화면(또는 구현 상세), 어드민 화면, 공통 정책, 기타 (원티드 화면 변경, 외부 연동)
+- 섹션 순서: 개요, 용어, 서비스 구조, 플로우, 유저향 화면(또는 구현 상세), 어드민 화면, 공통 정책, 기타 (기존 서비스 화면 변경, 외부 연동)
   - 쓰지 않는 섹션은 지우고 번호를 1부터 이어 붙임 (v5.1)
   - 용어는 새 개념이 2개 이상일 때만, 플로우는 작성자가 고른 경우에만
 - 기존 화면 개선은 '화면 > 영역' 경로, AS-IS → TO-BE, 유지와 삭제, 판단 근거 수치로 씀 (v5.1)
 - 기준값, 조건, 대상 범위는 출처 문장을 인용해 두고 저장 전에 방향을 대조함 (v5.1)
-- 상태와 버튼 표를 먼저 확정하고 화면을 씀. 다른 팀 화면(GNB, 기업대시보드, 프로필)도 원티드 화면 변경에 화면 표로 쓰고 담당팀 확인 표시
+- 상태와 버튼 표를 먼저 확정하고 화면을 씀. 다른 팀 화면(GNB, 마이페이지, 프로필)도 기존 서비스 화면 변경에 화면 표로 쓰고 담당팀 확인 표시
 - 다른 곳은 "7-2 신청 취소 확인"처럼 섹션 번호와 이름으로 가리킴. 문서 안 링크 없음
 - 화면 문구는 그 문구가 보이는 요소 바로 아래에 씀. '문구' 소제목을 따로 두지 않음 (v5.1.1). 정해지지 않은 문구는 "(문구 워싱 필요)"
 - ⚠️는 착수를 막는 것에만. 나머지 확인 사항은 "(PO 확인 필요)" 같은 평문 괄호. 건수는 채팅으로만 알림. AI가 빈칸을 대신 채우지 않음
@@ -29,8 +28,9 @@ Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬.
 - 프로토타입이 있으면 유저 관점 리뷰(과업별로 처음 누를 곳과 찾는지)를 따로 돌림. 상태별 화면은 시연 패널로 전환 (v5.2)
 - 게시 전 검사를 코드로 강제: lint를 통과하지 않으면 Confluence 본문 변환기가 본문을 만들지 않음. lint에 넣지 않는 섹션, 결정 날짜, 문단 서술, 메타의 문서 유형, 구현 상세 5열과 화면 표 3열 검사 추가 (v5.3)
 - 시작 전에 읽을 파일을 SKILL.md 맨 위에 명시. 로컬 스킬이 최신이 아니면 업데이트할지 먼저 물음 (v5.3)
-- 변경 표시 프로토타입: 실제 원티드 화면을 WDS로 재현하고 이번에 바뀌는 곳을 점선 상자로 표시함. 색은 확정, 외부 요청, 확인 필요. 범례에서 표시를 끄면 완성 화면처럼 보이고, 화면은 버튼으로 이어짐. 아티팩트 질문에서 3번을 고르거나 "변경 표시 프로토타입 만들어줘" (v5.4)
+- 변경 표시 프로토타입: 지금 서비스 화면을 팀 디자인 시스템 또는 기본 컴포넌트로 재현하고 이번에 바뀌는 곳을 점선 상자로 표시함. 색은 확정, 외부 요청, 확인 필요. 범례에서 표시를 끄면 완성 화면처럼 보이고, 화면은 버튼으로 이어짐. 아티팩트 질문에서 3번을 고르거나 "변경 표시 프로토타입 만들어줘" (v5.4)
 - 플러그인 마켓플레이스에서 설치할 수 있게 `.claude-plugin/plugin.json` 추가 (v5.4)
+- 회사 특화 표현 제거 (v5.4.1)
 - 슬랙 공유 요약 양식: `변경사항`, `디자인 확인 필요`로 나누고 짧게, 경로로 씀 (v5.2)
 - 질문할 때 화면 ID와 함께 화면 이름과 상황을 씀. 이미 정한 것은 다시 묻지 않음 (v5.2)
 - 문체는 개조식. 누가 하는지 쓰고, 들여쓰기로 묶음. 가운데점, 줄표, 원형 숫자, 한자어 축약 라벨 금지. 출력 전 자동 검사 (번호가 이어지는지, ⚠️가 착수 조건에만 있는지도 검사)
@@ -48,9 +48,11 @@ zip 안은 `product-spec/` 폴더 하나. 압축을 풀거나 다시 묶지 않�
 
 ### Claude Code (플러그인 마켓플레이스)
 
+`.claude-plugin/marketplace.json`이 이 레포를 마켓플레이스로 등록한다. 플러그인 이름은 `product-spec`, 마켓플레이스 이름은 `product-spec-skill`
+
 ```
-/plugin marketplace add wanteddev/claude-skills
-/plugin install product-spec@{마켓플레이스 이름}
+/plugin marketplace add suziejang-po/product-spec-skill
+/plugin install product-spec@product-spec-skill
 ```
 
 ### Claude Code (직접 설치)
@@ -90,8 +92,8 @@ Node.js가 있어야 다이어그램을 그린다
 # https://id.atlassian.com/manage-profile/security/api-tokens 에서 발급 후 ~/.zshrc에 추가
 export ATLASSIAN_EMAIL="본인 회사 이메일"
 export ATLASSIAN_API_TOKEN="발급한 토큰"
-# 사이트가 다르면
-export ATLASSIAN_SITE="wantedlab.atlassian.net"
+# Confluence 주소의 호스트. https:// 없이
+export ATLASSIAN_SITE="회사.atlassian.net"
 ```
 
 ## 파일 구조
@@ -111,7 +113,7 @@ export ATLASSIAN_SITE="wantedlab.atlassian.net"
     confluence.md               게시, 갱신, 충돌 검사, 인라인 댓글
     writing-style.md            문체와 금지어
     change-prototype.md         변경 표시 프로토타입 규칙
-    change-prototype-template.html  변경 표시 프로토타입 양식 (WDS 토큰, 동작 속성)
+    change-prototype-template.html  변경 표시 프로토타입 양식 (기본 컴포넌트, 동작 속성)
   scripts/
     lint_spec.py                문체 검사
     render_diagram.sh           Mermaid → PNG

@@ -1,0 +1,12 @@
+{
+  "name": "product-spec-skill",
+  "description": "Product Spec 작성 스킬",
+  "owner": { "name": "장수지", "url": "https://github.com/suziejang-po" },
+  "plugins": [
+    {
+      "name": "product-spec",
+      "source": "./",
+      "description": "Product Spec(v5) 작성, 수정, Confluence 게시. 바뀌는 곳을 표시한 화면 프로토타입 생성"
+    }
+  ]
+}
