@@ -1,4 +1,4 @@
-# product-spec 스킬 사용 안내 (v5.3.0)
+# product-spec 스킬 사용 안내 (v5.4.1)
 
 ## 무엇인가
 
@@ -14,10 +14,11 @@
 
 ## 설치 (한 번)
 
-- Claude 앱 (claude.ai, 데스크톱 앱)
-  - 레포의 `dist/product-spec.zip`을 내려받아 설정 > 기능 > 스킬에서 업로드 (코드 실행 켜기)
 - Claude Code
-  - `이 스킬 설치해줘 https://github.com/suziejang-po/product-spec-skill`
+  - `/plugin marketplace add wanteddev/claude-skills`
+  - `/plugin install product-spec@claude-skills`
+- Claude 앱 (claude.ai, 데스크톱 앱)
+  - 스킬 관리자에게 zip을 받아 설정 > 기능 > 스킬에서 업로드 (코드 실행 켜기)
 - 준비물
   - Node.js (흐름도 그림 렌더. 없으면 그림 대신 확인 필요 표시)
   - Atlassian MCP 연결 (Confluence 게시. 없으면 로컬 파일까지만)
@@ -63,8 +64,8 @@
 
 ## 업데이트
 
-- 실행할 때 새 버전이 있으면 한 줄 안내가 뜸. `스킬 업데이트해줘`라고 하면 갱신
-- 규칙이나 양식을 바꾸고 싶으면 스킬 관리자에게 요청. 포크 main에 반영되면 전원에게 안내가 뜸
+- Claude Code: `/plugin update product-spec`
+- 규칙이나 양식을 바꾸고 싶으면 스킬 관리자에게 요청. 마켓플레이스에 반영되면 위 명령으로 받음
 
 ## 알려진 한계 (2026-09-18)
 
