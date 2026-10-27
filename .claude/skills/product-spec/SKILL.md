@@ -1,10 +1,10 @@
 ---
 name: product-spec
-description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '/product-spec' 요청에 쓴다. 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 회고, 미팅록에는 안 씀
+description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '변경 표시 프로토타입 만들어줘', '/product-spec' 요청에 쓴다. 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 회고, 미팅록에는 안 씀
 ---
-<!-- skill-version: 5.3.0 / skill-repo: suziejang-po/product-spec-skill -->
+<!-- skill-version: 5.4.0 / skill-repo: suziejang-po/product-spec-skill -->
 
-# Product Spec 생성 에이전트 v5.3
+# Product Spec 생성 에이전트 v5.4
 
 Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양식과 절차는 `references/`, 도구는 `scripts/`
 
@@ -137,7 +137,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 4. 적대적 리뷰 (저장 뒤, 게시 전 1회): 서브에이전트에게 문서만 주고 정책끼리 충돌, 상태와 흐름 충돌, 용어 불일치, 차수 표시와 본문 범위 불일치, 처음 보는 사람이 막힐 곳을 찾게 한다. 없으면 없다고 보고하게 하고 억지로 찾지 않게 한다. 개발 편의에 맞추자는 지적은 버린다. 결과는 채팅에만 남기고 문서에 자동 반영하지 않음. 명확한 오류(용어 불일치, 표기 오류)는 고치고, 정책 판단이 필요한 것만 작성자에게 묻는다
    - 프로토타입이 있고 메뉴나 화면 구조가 바뀌었으면 유저 관점 리뷰를 따로 1회: 서브에이전트에게 설명 패널을 끈 화면 캡처만 주고, 사람 유형별 과업(예: 신청하기, 내 신청 상태 보기, 취소하기)마다 처음 누를 곳과 찾았는지를 판정하게 한다. 같은 기능이 두 메뉴에 있는지, 처음 골라진 탭과 필터 때문에 원하는 정보가 안 보이는지도 함께 본다. 결과는 '바로 고칠 것'과 '결정 필요'로 나눠 채팅으로 알림
 5. 안내 (채팅에만): "저장: docs/specs/{슬러그}/spec.md. 착수 전 확인 {A}건". A 등급이 남아 있으면 항목 이름을 한 줄씩 덧붙이고, 평문 괄호로 남긴 확인 사항도 목록으로 덧붙임. 문서에는 건수를 쓰지 않음
-6. 아티팩트 질문 1회: "화면이나 흐름을 눌러 볼 수 있는 HTML도 만들까요? 1) 화면 프로토타입 HTML 2) 흐름 인터랙티브 시각화 3) 만들지 않음(기본)". 3이거나 답이 없으면 넘어감. 1이나 2면 「아티팩트 생성」대로 만들고 비주얼 표에 경로 기록
+6. 아티팩트 질문 1회: "화면이나 흐름을 눌러 볼 수 있는 HTML도 만들까요? 1) 화면 프로토타입 HTML 2) 흐름 인터랙티브 시각화 3) 바뀌는 곳을 표시한 실제 화면 프로토타입(WDS) 4) 만들지 않음(기본)". 4이거나 답이 없으면 넘어감. 1이나 2면 「아티팩트 생성」대로, 3이면 `references/change-prototype.md`대로 만들고 비주얼 표에 경로 기록
 7. 파일 시스템이 없는 환경이면 본문만 출력하고 "Claude Code에서는 docs/specs/ 아래에 자동 저장됩니다" 한 줄
 
 ### Phase 5. Confluence 게시
@@ -172,6 +172,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 - 화면 프로토타입: `<!DOCTYPE html>` 완전한 문서. 시스템 폰트 'Pretendard', -apple-system, sans-serif. CSS 변수로 Wanted Montage 색(`--color-primary: #3366FF` 등). 화면 전환은 class 토글. 입력 항목은 검증과 오류 문구 동작. 플랫폼별 차이가 있으면 뷰포트 전환 버튼
 - 화면마다 설명 패널: 화면 한쪽에 접고 펼 수 있는 패널을 두고, 그 화면에 해당하는 구현 상세 행(진입점, 기능, 요구사항 번호 불릿, ⚠️)을 스펙 문구 그대로 보여준다. 행과 화면은 화면 열에서 `(신규 생성)` 같은 접미사를 뗀 이름으로 맞춘다. 화면에 대응하지 않는 행(진입점이 서버 스케줄, 배치, 발송, 집계인 행. 화면 열은 `해당 없음 ({종류})`로 적음)은 '화면 밖 동작' 패널 하나에 모아 둔다. 디자이너와 개발자에게 프로토타입만으로 설명할 수 있게 하기 위함. 요구사항 항목을 누르면 해당 UI 요소가 강조되면 더 좋다. 파일에 사내 API 경로가 들어가므로 스펙 폴더 밖으로 보낼 때는 공유 범위를 확인
 - 흐름 시각화: 흐름도의 노드를 클릭하면 해당 구현 상세 행이 강조되는 한 페이지
+- 변경 표시 프로토타입: 실제 원티드 화면을 WDS로 재현하고 바뀌는 곳을 점선 상자로 표시. 색은 확정, 외부 요청, 확인 필요. 범례에서 표시를 끄면 완성 화면처럼 보임. 화면은 버튼으로 이어짐. 규칙은 `references/change-prototype.md`, 양식은 `references/change-prototype-template.html`. 저장 위치 `docs/specs/{슬러그}/change-prototype.html`
 - 기간이나 상태(구간, 로그인 여부, 신청 여부)에 따라 화면이 바뀌면 시연 패널을 둔다: 상태 전환 칩, 스위치, 화면 바로가기. 실제 화면에 없는 요소라는 표시를 붙여 디자이너가 헷갈리지 않게 함
 - 사내 디자인 시스템 MCP(원티드 몽타주: `list_components`, `get_component`, `list_tokens`)가 연결돼 있으면 그 컴포넌트로 만든다. React + `@montage-ui/core`를 단일 파일로 빌드하고, 아티팩트로 올릴 때 본문이 크면 `index.html` + `app.js` 두 파일로 나눠 올림. 썸네일은 이모지 대신 서비스 화면처럼 보이는 그림. 디자이너 시안이 있으면 레이아웃은 시안을 따르고, 시안과 스펙이 다른 곳은 채팅에 목록으로 알림
 - 저장 위치 `docs/specs/{슬러그}/prototype.html`. 파일 시스템이 없으면 HTML 전체를 출력. Confluence 게시 시 첨부 경로가 있으면 같이 올림
@@ -221,6 +222,8 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 - references/diagram.md
 - references/confluence.md
 - references/writing-style.md
+- references/change-prototype.md
+- references/change-prototype-template.html
 - scripts/lint_spec.py
 - scripts/render_diagram.sh
 - scripts/svgkit.py
