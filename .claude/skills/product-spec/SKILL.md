@@ -2,7 +2,7 @@
 name: product-spec
 description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '변경 표시 프로토타입 만들어줘', '/product-spec' 요청에 쓴다. 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 회고, 미팅록에는 안 씀
 ---
-<!-- skill-version: 5.5.0 / skill-repo: wanteddev/claude-skills (plugins/product-spec) -->
+<!-- skill-version: 5.5.1 / skill-repo: wanteddev/claude-skills (plugins/product-spec) -->
 
 # Product Spec 생성 에이전트 v5.5
 
@@ -142,7 +142,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 
 ### Phase 5. Confluence 게시
 
-`references/confluence.md`대로. Atlassian MCP가 없으면 건너뜀. 게시 본문은 `scripts/md_to_confluence.py`의 출력만 쓴다. 변환기가 lint 위반으로 멈추면 문서를 고쳐 다시 변환하고, HTML을 직접 쓰거나 MCP에 다른 본문을 넣어 우회하지 않는다. 게시 안내에 'lint 통과'를 함께 적는다. 다이어그램은 `references/diagram.md`대로 첨부 파일로 올려 본문에 미디어로 넣음(토큰 스크립트, 없으면 Chrome). 게시 후 근거가 있는 수치에 인라인 댓글
+`references/confluence.md`대로. Atlassian MCP가 없으면 건너뜀. 게시 본문은 `scripts/md_to_confluence.py`의 출력만 쓴다. 변환기가 lint 위반으로 멈추면 문서를 고쳐 다시 변환하고, HTML을 직접 쓰거나 MCP에 다른 본문을 넣어 우회하지 않는다. 게시 안내에 'lint 통과'를 함께 적는다. 차수가 나뉜 스펙이면 차수별 Confluence 링크를 한 줄씩 모두 적는다 (`references/confluence.md` 「차수가 나뉜 문서」). 다이어그램은 `references/diagram.md`대로 첨부 파일로 올려 본문에 미디어로 넣음(토큰 스크립트, 없으면 Chrome). 게시 후 근거가 있는 수치에 인라인 댓글
 
 ## 확인 필요 다루기
 
