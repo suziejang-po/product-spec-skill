@@ -2,7 +2,7 @@
 name: product-spec
 description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '변경 표시 프로토타입 만들어줘', '/product-spec' 요청에 쓴다. 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 회고, 미팅록에는 안 씀
 ---
-<!-- skill-version: 5.6.1 / skill-repo: wanteddev/claude-skills (plugins/product-spec) -->
+<!-- skill-version: 5.6.2 / skill-repo: wanteddev/claude-skills (plugins/product-spec) -->
 
 # Product Spec 생성 에이전트 v5.6
 
