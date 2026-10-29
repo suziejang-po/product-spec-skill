@@ -2,9 +2,9 @@
 name: product-spec
 description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '변경 표시 프로토타입 만들어줘', '/product-spec' 요청에 쓴다. 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 회고, 미팅록에는 안 씀
 ---
-<!-- skill-version: 5.5.1 / skill-repo: wanteddev/claude-skills (plugins/product-spec) -->
+<!-- skill-version: 5.6.0 / skill-repo: wanteddev/claude-skills (plugins/product-spec) -->
 
-# Product Spec 생성 에이전트 v5.5
+# Product Spec 생성 에이전트 v5.6
 
 Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양식과 절차는 `references/`, 도구는 `scripts/`
 
@@ -44,10 +44,11 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 - 스펙 하나가 폴더 하나: `docs/specs/{슬러그}/spec.md`, `docs/specs/{슬러그}/diagrams/`, `docs/specs/{슬러그}/sources.md`, `docs/specs/{슬러그}/media.json`(첨부 시)
 - 슬러그는 제목의 핵심 명사 2~3개를 하이픈으로 (예: `offer-preferred-location`)
 - 차수가 나뉘면 차수마다 문서를 따로 만든다. 문서 하나에 한 차수만
-  - 폴더: `docs/specs/{슬러그}-p1/`, `docs/specs/{슬러그}-p2/`. 제목 끝에 `({N}차)`
+  - 폴더: 상위 `docs/specs/{슬러그}/index.md` 아래 차수 폴더 `p1/`, `p2/` (각각 `spec.md`, `sources.md`, `diagrams/`). 차수 문서 제목 끝에 `({N}차)`
+  - `index.md`는 상위 Confluence 페이지용. 첫 줄 Page ID 주석, 제목 `# [{연도}] Product Spec: {제목}`, 한 줄 설명만. 본문은 `scripts/parent_page.py`가 만들고 차수 목록은 Confluence가 자동으로 그림
   - 출처에 차수가 보이거나 작성자가 차수를 말하면 초안 전에 한 줄로 알린다: "차수별로 문서를 나눕니다. {N}차부터 씁니다"
   - 각 문서는 그 차수에서 만드는 것만 쓴다. 다른 차수 기능은 언급하지 않는다 (작성자가 범위에서 뺀 기능과 같게 다룸)
-  - 2차 이후 문서는 앞 차수 결과를 기존 화면으로 보고 Enhancement 규칙(AS-IS → TO-BE, 유지, 삭제)으로 쓴다. 1-7 참고에 앞 차수 문서 링크
+  - 2차 이후 문서는 앞 차수 결과를 기존 화면으로 보고 Enhancement 규칙(AS-IS → TO-BE, 유지, 삭제)으로 쓴다. 1-7 참고에 상위 문서 링크
   - 문제, 니즈, 가설이 차수 사이에 같으면 2차 이후 문서는 각 1줄로 줄이고 1차 문서를 가리킨다: `배경: 1차 문서 1-2 문제 확인`
   - 한 문서 안에 `[1차]` 표시, 차수별 범위 표, 정책별 차수 줄을 두지 않는다 (lint "차수 섞임")
 - 도메인 팩은 프로젝트 공통: `docs/spec-context.md`
@@ -144,6 +145,10 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 
 `references/confluence.md`대로. Atlassian MCP가 없으면 건너뜀. 게시 본문은 `scripts/md_to_confluence.py`의 출력만 쓴다. 변환기가 lint 위반으로 멈추면 문서를 고쳐 다시 변환하고, HTML을 직접 쓰거나 MCP에 다른 본문을 넣어 우회하지 않는다. 게시 안내에 'lint 통과'를 함께 적는다. 차수가 나뉜 스펙이면 차수별 Confluence 링크를 한 줄씩 모두 적는다 (`references/confluence.md` 「차수가 나뉜 문서」). 다이어그램은 `references/diagram.md`대로 첨부 파일로 올려 본문에 미디어로 넣음(토큰 스크립트, 없으면 Chrome). 게시 후 근거가 있는 수치에 인라인 댓글
 
+### Phase 6. Jira 에픽
+
+게시가 끝나면 `references/jira.md`대로 에픽을 만든다. 메타 Jira 칸이 비어 있을 때만, 차수 문서마다 하나. 만들기 전 미리보기로 한 번 확인받고, 만든 뒤 메타 Jira 칸에 링크를 넣어 페이지를 갱신
+
 ## 확인 필요 다루기
 
 - 되돌리기 쉽고 상식적인 기본값이 있으면 묻지 않고 정한 뒤 "기본값으로 정한 것" 목록으로 한 번에 알린다. 작성자가 아니라고 하면 그때 고친다
@@ -159,7 +164,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 ## 수정 모드
 
 `docs/specs/` 아래 스펙이 있거나, 예전 구조 `docs/PRODUCT_SPEC.md`가 있거나, 이 대화에서 이미 스펙을 만들었거나, 작성자가 기존 스펙을 첨부했을 때
-1. 스펙이 둘 이상이면 목록을 보여주고 어느 것을 고칠지, 아니면 새로 만들지 묻는다. 새 기능이면 새 슬러그로 신규 생성. 다음 차수를 쓰자는 요청이면 기존 문서를 고치지 않고 `{슬러그}-p{N}`로 새 문서
+1. 스펙이 둘 이상이면 목록을 보여주고 어느 것을 고칠지, 아니면 새로 만들지 묻는다. 새 기능이면 새 슬러그로 신규 생성. 다음 차수를 쓰자는 요청이면 기존 문서를 고치지 않고 `{슬러그}/p{N}/`에 새 문서. 차수 없이 만든 스펙에 2차가 생기면 기존 폴더 내용을 `p1/`로 옮기고 `index.md`를 만든 뒤 시작 (Confluence 기존 페이지는 새 상위 페이지 아래로 옮김)
    - 예전 문서에 차수가 섞여 있으면(`[1차]` 표시, 차수별 범위 표) 고치기 전에 묻는다: "차수별 문서로 나눌까요? 1) 나눔 2) 이번 수정만". 1이면 지금 차수 문서를 남기고 나머지 차수 내용을 새 문서로 옮김
 2. 기존 문서와 `sources.md`를 읽고 변경 요청과 `git log --since`의 변경을 대조
 3. 백업 후 영향 받는 섹션만 다시 써서 머지. 전체 재생성 금지, 변경 없는 섹션은 출력하지 않음
@@ -223,6 +228,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 - references/diagram.md
 - references/confluence.md
 - references/writing-style.md
+- references/jira.md
 - references/change-prototype.md
 - references/change-prototype-template.html
 - scripts/lint_spec.py
@@ -232,3 +238,4 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 - scripts/mermaid_macro.py
 - scripts/confluence_attach.sh
 - scripts/md_to_confluence.py
+- scripts/parent_page.py

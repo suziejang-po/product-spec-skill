@@ -14,6 +14,8 @@ done
 # 도메인 말 '1차 면접'은 차수 섞임으로 잡지 않아야 함
 printf '## 1. 개요\n\n- 서류 통과자는 1차 면접으로 이동\n' > /tmp/_phase_ok.md
 if python3 $S/scripts/lint_spec.py /tmp/_phase_ok.md | grep -q '차수 섞임'; then echo "실패: '1차 면접'을 차수 섞임으로 잡음"; fail=1; else echo "통과 OK: 도메인 말 '1차 면접'은 통과"; fi
+# 상위 페이지 본문에 하위 페이지 목록 매크로가 들어가야 함
+if python3 $S/scripts/parent_page.py --summary '<b>테스트</b>' | grep -q 'ac:name="children"' && ! python3 $S/scripts/parent_page.py --summary '<b>x</b>' | grep -q '<b>'; then echo "통과 OK: 상위 페이지 하위 목록 매크로"; else echo "실패: 상위 페이지 본문"; fail=1; fi
 # 게시 변환기는 lint 위반이 있으면 본문을 만들지 않아야 함
 if python3 $S/scripts/md_to_confluence.py tests/fixtures/bad-spec.md --out /tmp/_bad_body.html >/dev/null 2>&1; then
   echo "실패: 변환기가 lint 위반 문서를 변환함"; fail=1

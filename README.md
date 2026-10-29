@@ -1,4 +1,4 @@
-# product-spec-skill (v5.5.1)
+# product-spec-skill (v5.6.0)
 
 Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬. 원본 레포를 포크해 v4, v5로 재구성
 
@@ -31,7 +31,9 @@ Claude Code에서 `/product-spec`으로 호출하는 Product Spec 작성 스킬.
 - 시작 전에 읽을 파일을 SKILL.md 맨 위에 명시. 로컬 스킬이 최신이 아니면 업데이트할지 먼저 물음 (v5.3)
 - 변경 표시 프로토타입: 실제 원티드 화면을 WDS로 재현하고 이번에 바뀌는 곳을 점선 상자로 표시함. 색은 확정, 외부 요청, 확인 필요. 범례에서 표시를 끄면 완성 화면처럼 보이고, 화면은 버튼으로 이어짐. 아티팩트 질문에서 3번을 고르거나 "변경 표시 프로토타입 만들어줘" (v5.4)
 - 플러그인 마켓플레이스에서 설치할 수 있게 `.claude-plugin/plugin.json` 추가 (v5.4)
-- 차수가 나뉘면 차수마다 문서를 따로 만듦. `docs/specs/{슬러그}-p{N}/`, 제목 끝 `({N}차)`. 한 문서에 `[1차]` 표시나 차수별 범위 표가 있으면 lint가 막음 (v5.5)
+- 차수가 나뉘면 차수마다 문서를 따로 만듦. `docs/specs/{슬러그}/p{N}/`, 제목 끝 `({N}차)`. 한 문서에 `[1차]` 표시나 차수별 범위 표가 있으면 lint가 막음 (v5.5)
+- 차수가 나뉘면 상위 Confluence 페이지 아래 차수 페이지를 하위로 둠. 상위 페이지에 하위 목록이 자동으로 나옴 (v5.6)
+- 게시 뒤 Jira 에픽을 만들고 메타 Jira 칸에 링크를 넣음. 차수 문서마다 하나, 만들기 전 한 번 확인 (v5.6)
 - 슬랙 공유 요약 양식: `변경사항`, `디자인 확인 필요`로 나누고 짧게, 경로로 씀 (v5.2)
 - 질문할 때 화면 ID와 함께 화면 이름과 상황을 씀. 이미 정한 것은 다시 묻지 않음 (v5.2)
 - 문체는 개조식. 누가 하는지 쓰고, 들여쓰기로 묶음. 가운데점, 줄표, 원형 숫자, 한자어 축약 라벨 금지. 출력 전 자동 검사 (번호가 이어지는지, ⚠️가 착수 조건에만 있는지도 검사)
@@ -66,7 +68,7 @@ Node.js가 있어야 다이어그램을 그린다
 
 또는 "스펙 작성해줘", "PRD 만들어줘", "구현 요구사항 정리해줘". 회고, 인수인계, 일반 문서 정리에는 쓰지 않음
 
-흐름: 도메인 팩 수집(첫 실행만) → 골격 초안 → 질문(우선순위 순, 5개씩 기본 2회) → 본문 저장(`docs/specs/{슬러그}/spec.md`) → 아티팩트 여부 질문 → Confluence 게시
+흐름: 도메인 팩 수집(첫 실행만) → 골격 초안 → 질문(우선순위 순, 5개씩 기본 2회) → 본문 저장(`docs/specs/{슬러그}/spec.md`) → 아티팩트 여부 질문 → Confluence 게시 → Jira 에픽
 
 - 스펙 하나가 폴더 하나. `docs/specs/{슬러그}/` 아래 `spec.md`, `diagrams/`, `sources.md`(출처 기록)
 - 기존 스펙이 있으면 변경 섹션만 수정. 예전 구조 `docs/PRODUCT_SPEC.md`도 인식
@@ -103,7 +105,8 @@ export ATLASSIAN_SITE="wantedlab.atlassian.net"
     question-map.md             빈칸을 질문으로 바꾸는 표
     context-pack.md             도메인 팩 양식과 수집 절차
     diagram.md                  다이어그램 규칙과 삽입 경로
-    confluence.md               게시, 갱신, 충돌 검사, 인라인 댓글
+    confluence.md               게시, 갱신, 충돌 검사, 인라인 댓글, 차수별 상위/하위 페이지
+    jira.md                     Jira 에픽 만들기
     writing-style.md            문체와 금지어
     change-prototype.md         변경 표시 프로토타입 규칙
     change-prototype-template.html  변경 표시 프로토타입 양식 (WDS 토큰, 동작 속성)
@@ -113,6 +116,7 @@ export ATLASSIAN_SITE="wantedlab.atlassian.net"
     mermaid_macro.py            Mermaid 블록 HTML 생성
     confluence_attach.sh        첨부 업로드 (본인 토큰)
     md_to_confluence.py         마크다운 → Confluence HTML
+    parent_page.py              차수별 스펙의 상위 페이지 본문 (하위 페이지 목록 매크로)
 ```
 
 ## 업데이트
@@ -132,5 +136,6 @@ bash tests/run.sh
 - 변환기가 lint 위반 문서를 막고 정상 문서는 변환하는지
 - 변경 표시 프로토타입 양식의 화면 이동, 모달, 입력 검사 연결이 실제 id를 가리키는지
 - skill-files 목록의 파일이 모두 있는지
+- 상위 페이지 본문에 하위 페이지 목록 매크로가 들어가는지
 - 차수 섞임을 잡고, '1차 면접' 같은 도메인 말은 통과시키는지
 - 스킬 파일을 고친 뒤 커밋 전에 돌림
