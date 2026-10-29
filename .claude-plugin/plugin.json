@@ -1,7 +1,7 @@
 {
   "name": "product-spec",
   "description": "Wantedlab Product Spec(v5) 작성, 수정, Confluence 게시. 바뀌는 곳을 표시한 WDS 화면 프로토타입 생성",
-  "version": "5.4.1",
+  "version": "5.5.0",
   "author": { "name": "장수지" },
   "skills": ["./.claude/skills/"]
 }
