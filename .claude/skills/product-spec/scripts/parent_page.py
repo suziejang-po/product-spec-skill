@@ -6,12 +6,12 @@ import argparse
 import html
 import sys
 
+# Atlassian MCP(html 형식)는 storage XML(<ac:structured-macro>)을 글자 그대로 보여주므로 확장 노드 꼴로 씀
 CHILDREN = (
-    '<ac:structured-macro ac:name="children" ac:schema-version="2">'
-    '<ac:parameter ac:name="all">false</ac:parameter>'
-    '<ac:parameter ac:name="sort">creation</ac:parameter>'
-    '<ac:parameter ac:name="excerptType">none</ac:parameter>'
-    '</ac:structured-macro>'
+    '<div data-type="extension" data-extension-key="children" '
+    'data-extension-type="com.atlassian.confluence.macro.core" '
+    'data-parameters=\'{"macroParams":{"all":{"value":"false"},"depth":{"value":"1"}},'
+    '"macroMetadata":{"schemaVersion":{"value":"2"},"title":"Children Display"}}\'></div>'
 )
 
 
