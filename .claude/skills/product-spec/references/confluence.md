@@ -6,7 +6,7 @@ Atlassian MCP 도구(`createConfluencePage`, `updateConfluencePage`, `getConflue
 
 ## 설정
 
-부모 페이지와 스페이스는 도메인 팩(`docs/spec-context.md`)의 Confluence 설정 표에서 읽는다. 없으면 기본값 spaceKey `WAN`, 작성중 부모 `4808376595`, 출시 확정 부모 `4808212726`. 생성이 권한 오류(403)로 실패하면 "이 스페이스에 페이지를 만들 권한이 없습니다. 개인 스페이스에 만들까요, 아니면 부모 페이지 ID를 알려 주시겠어요?"라고 묻는다
+부모 페이지와 스페이스는 도메인 팩(`docs/spec-context.md`)의 Confluence 설정 표에서 읽는다. 없으면 기본값 spaceKey `WAN`, 작성중 부모 `4808376595` (Product Spec 페이지), 출시 확정 부모 `4808212726`. 작성자가 다른 스페이스나 부모 페이지를 말하면 이번 게시만 그곳에 만들고, 도메인 팩 기본값은 바꾸지 않는다 (작성자가 '앞으로도'라고 하면 바꿈) 생성이 권한 오류(403)로 실패하면 "이 스페이스에 페이지를 만들 권한이 없습니다. 개인 스페이스에 만들까요, 아니면 부모 페이지 ID를 알려 주시겠어요?"라고 묻는다
 
 ## 본문 만들기
 
@@ -14,6 +14,8 @@ Atlassian MCP 도구(`createConfluencePage`, `updateConfluencePage`, `getConflue
 python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --media-json media.json --out body.html
 ```
 
+- Atlassian MCP는 v2(Streamable HTTP) 연결이어야 한다. 예전 v1(SSE) 연결은 요청이 거절된다. 거절되면 "Atlassian 연결을 다시 해 주세요 (설정 > 커넥터)" 안내
+- 본문에 storage XML(`<ac:structured-macro>`)을 쓰지 않는다. MCP html 형식은 이를 글자 그대로 보여준다. 매크로는 `data-type="extension"` 꼴 (`scripts/parent_page.py` 참고)
 - `contentFormat`는 `html`. 변환기가 금지 기호를 치환하고, 표 첫 열이 `#`이면 번호 열을 40으로, 화면 단위 3열 표는 140, 200, 나머지로 폭을 고정
 - 변환기가 표준 오류로 본문 크기와 알림(첨부 정보 없음, 그림 파일 없음)을 낸다. 알림은 게시 안내에 그대로 붙임
 - 본문은 `--out body.html`로 파일에도 저장하고, `updateConfluencePage`에 넣기 전에 파일 크기와 인자 길이가 같은지 확인 (잘림 방지). 43KB 본문은 한 번에 올라갔다 (2026-10-12 실측). 한두 줄 수정은 「작은 수정」 경로
@@ -68,7 +70,7 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 - 상위 페이지
   - 제목 `[{올해}] Product Spec: {제목}`. 로컬은 `docs/specs/{슬러그}/index.md`, Page ID는 그 첫 줄
   - 본문은 `python3 {SKILL_DIR}/scripts/parent_page.py --summary "{1차 문서 1-5 솔루션 첫 줄}"` 출력만. Confluence '하위 페이지' 매크로가 차수 페이지 목록을 그린다. 차수 페이지가 늘어도 상위 본문은 고치지 않는다
-  - 첫 차수를 게시할 때 상위 페이지가 없으면 먼저 만든다 ('제품 출시 미정' 아래)
+  - 첫 차수를 게시할 때 상위 페이지가 없으면 먼저 만든다 (작성중 부모 아래, 기본 `4808376595`)
 - 차수 페이지
   - 제목 `(작성중) [{올해}] Product Spec: {제목} ({N}차)`. `createConfluencePage`의 parentId는 상위 페이지
   - 차수 폴더(`p1/`, `p2/`)마다 첫 게시와 갱신을 따로 한다. Page ID는 각 폴더 `spec.md` 첫 줄에. 한 페이지에 두 차수를 올리지 않는다

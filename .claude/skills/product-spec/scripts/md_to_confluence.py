@@ -47,6 +47,8 @@ def inline(text):
         p = re.sub(r"`([^`]+)`", r"<code>\1</code>", p)
         p = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", p)
         p = re.sub(r"\[([^\]]+)\]\((https?://(?:[^()\s]|\([^()\s]*\))+)\)", r'<a href="\2">\1</a>', p)
+        # 맨 URL(상위 문서, Jira 에픽 링크)은 누를 수 있는 스마트 링크로. 이미 <a> 안에 있는 URL은 건드리지 않음
+        p = re.sub(r'(?<!href=")(?<![">])(https?://[^\s<>"\')]+)', r'<a href="\1" data-card-appearance="inline"></a>', p)
         # 문서 안 링크 [신청 취소](#신청-취소) → 제목 앵커. Confluence 앵커는 제목의 공백을 하이픈으로 바꾼 값
         p = re.sub(r"\[([^\]]+)\]\(#([^)]+)\)", lambda m: f'<a href="#{m.group(2).strip().replace(" ", "-")}">{m.group(1)}</a>', p)
         out.append(p)
