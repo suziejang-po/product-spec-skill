@@ -61,11 +61,11 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 - 인라인 댓글이 달린 글자는 `<ac:inline-comment-marker>`로 감싸져 있어 문자열 바꾸기가 안 맞을 수 있다. 바꿀 때 마커를 그대로 옮겨 넣는다 (지우면 댓글이 사라짐)
 - 문서 안 링크는 쓰지 않는다. 다른 곳은 "7-2 신청 취소 확인"처럼 번호와 이름으로
 
-## 차수 표시 (상태 매크로)
+## 차수가 나뉜 문서
 
-`<ac:structured-macro ac:name="status" ac:schema-version="1"><ac:parameter ac:name="title">1차</ac:parameter><ac:parameter ac:name="colour">Blue</ac:parameter></ac:structured-macro>`
-
-- 1차 Blue, 2차 Yellow, 3차 Green. 괄호 설명은 매크로 뒤 글자로 (`[1차] (정산 정보는 2차)`)
+- 차수마다 페이지 하나. 제목 `(작성중) [{올해}] Product Spec: {제목} ({N}차)`
+- 같은 부모 아래 형제 페이지로 만든다. 2차 이후 페이지는 1-7 참고에 앞 차수 페이지 링크
+- 상태 매크로로 차수를 표시하지 않는다
 
 ## 시트 첨부
 
@@ -75,7 +75,7 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 
 작업을 Confluence에서 바로 했으면(작은 수정 경로, 작성자 직접 편집) 끝에 로컬을 맞춘다. 한쪽만 최신인 채로 끝내지 않음
 1. 로컬 `spec.md`를 `spec.md.bak.{YYYYMMDD-HHMMSS}`로 백업
-2. Confluence 본문을 마크다운으로 받아 `spec.md`에 저장. 표 셀 안 목록은 `<br>- `, 딸린 항목은 `<br>  - `로 바꾸고, 차수 매크로는 `[1차]` 글자로, 그림은 `diagrams/{첨부 파일명}`으로
+2. Confluence 본문을 마크다운으로 받아 `spec.md`에 저장. 표 셀 안 목록은 `<br>- `, 딸린 항목은 `<br>  - `로 바꾸고, 그림은 `diagrams/{첨부 파일명}`으로
 3. 페이지 첨부의 그림과 시트를 `diagrams/`와 스펙 폴더에 같은 파일명으로 둠
 4. lint 통과 확인
 

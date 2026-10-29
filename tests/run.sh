@@ -8,9 +8,12 @@ for f in $S/references/template-example*.md; do
   if python3 $S/scripts/lint_spec.py "$f" >/dev/null; then echo "통과 OK: $f"; else echo "실패: 예시 문서가 lint에 걸림 $f"; fail=1; fi
 done
 out=$(python3 $S/scripts/lint_spec.py tests/fixtures/bad-spec.md)
-for kind in "건수 줄" "메타" "문단 서술" "결정 날짜" "구현 상세 표" "넣지 않는 섹션" "확인 표시"; do
+for kind in "건수 줄" "메타" "문단 서술" "결정 날짜" "구현 상세 표" "넣지 않는 섹션" "확인 표시" "차수 섞임"; do
   if grep -q ": $kind:" <<<"$out"; then echo "검출 OK: $kind"; else echo "실패: '$kind'를 잡지 못함"; fail=1; fi
 done
+# 도메인 말 '1차 면접'은 차수 섞임으로 잡지 않아야 함
+printf '## 1. 개요\n\n- 서류 통과자는 1차 면접으로 이동\n' > /tmp/_phase_ok.md
+if python3 $S/scripts/lint_spec.py /tmp/_phase_ok.md | grep -q '차수 섞임'; then echo "실패: '1차 면접'을 차수 섞임으로 잡음"; fail=1; else echo "통과 OK: 도메인 말 '1차 면접'은 통과"; fi
 # 게시 변환기는 lint 위반이 있으면 본문을 만들지 않아야 함
 if python3 $S/scripts/md_to_confluence.py tests/fixtures/bad-spec.md --out /tmp/_bad_body.html >/dev/null 2>&1; then
   echo "실패: 변환기가 lint 위반 문서를 변환함"; fail=1

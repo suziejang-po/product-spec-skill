@@ -144,6 +144,9 @@ DECISION_DATE = re.compile(r"(?:\d{4}[-./])?\d{1,2}[/.월-]\s?\d{1,2}일?\s*(?:�
 # 넣지 않는 섹션. 확인 사항은 인라인, 뺀 기능은 언급하지 않음, 데이터 모델과 일정은 스펙 밖
 BANNED_H2 = re.compile(r"데이터와\s*API|데이터\s*모델|제외\s*범위|배포|롤백|확인\s*필요|논의|미결|담당과\s*일정|업데이트\s*로그|변경\s*이력|시나리오|향후")
 BANNED_H3 = re.compile(r"^(?:확인\s*필요|제외\s*범위|배포와\s*롤백|담당과\s*일정|데이터와\s*API|데이터\s*모델)$")
+# 한 문서에 차수가 섞인 표시. "1차 면접" 같은 도메인 말은 잡지 않도록 표시 꼴만 봄
+PHASE_MIX = re.compile(r"\[\d+차\]|\d+차\s*,\s*나머지는\s*\d+차|^\d+차\s*[:：]")
+PHASE_HEAD = re.compile(r"차수|^\d+차\s*[:：]")
 HEAD_ANY = re.compile(r"^(#{2,3})\s+(\d+(?:-\d+)?)\.\s+(.*)$")
 TABLE_SEP = re.compile(r"^\s*\|[\s|:-]+\|\s*$")
 IMPL_HEADER = ["#", "진입점", "화면", "기능", "요구사항"]
@@ -155,7 +158,7 @@ def cells(line):
 
 
 def check_shape(path):
-    """양식 검사: 넣지 않는 섹션, 결정 날짜, 문단 서술, 메타의 문서 유형, 구현 상세 5열과 화면 표 3열"""
+    """양식 검사: 넣지 않는 섹션, 결정 날짜, 문단 서술, 메타의 문서 유형, 구현 상세 5열과 화면 표 3열, 차수 섞임"""
     out = []
     lines = open(path, encoding="utf-8").read().split("\n")
     in_code = in_comment = False
@@ -192,9 +195,14 @@ def check_shape(path):
                     has_screen = True
             elif BANNED_H3.match(title.strip()):
                 out.append((n, "넣지 않는 섹션", f"'{title}'"))
+            if PHASE_HEAD.search(title.strip()):
+                out.append((n, "차수 섞임", f"'{title}' → 차수마다 문서를 따로 만듦. 문서 하나에 한 차수만"))
             region_first_table = True
             continue
         text = strip(line)
+        pm = PHASE_MIX.search(text.lstrip("-* "))
+        if pm:
+            out.append((n, "차수 섞임", f"'{pm.group()}' → 차수마다 문서를 따로 만듦. 다른 차수 기능은 이 문서에서 지움"))
         m = DECISION_DATE.search(text)
         if m:
             out.append((n, "결정 날짜", f"'{m.group()}' → 결정 과정과 날짜를 쓰지 않고 최종 내용만"))
