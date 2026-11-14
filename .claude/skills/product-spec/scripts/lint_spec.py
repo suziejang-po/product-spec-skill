@@ -40,6 +40,11 @@ CELLDOT = re.compile(r"\.\s+\S")
 LABEL = re.compile(r"맥락\s*:")
 # 정해지지 않은 UI 문구 표시는 (문구 워싱 필요)로 통일
 DRAFT = re.compile(r"\(문구 초안\)")
+# 표시 형태는 디자이너가 정함. 화면 표와 구현 상세에는 무엇을 보여주고 알려야 하는지만 씀
+# 기존 화면 이름으로 자주 쓰이는 모달, 팝업, 바텀시트는 잡지 않음
+UXFORM = re.compile(r"토스트|아코디언|말줄임|호버|툴팁|스켈레톤|애니메이션|플레이스홀더")
+# 수치의 기간, 모수, 쿼리는 본문이 아니라 섹션 끝 '데이터 근거' 펼치기에
+EVIDENCE_INLINE = re.compile(r"\((?:BQ|빅쿼리|BigQuery|Amplitude|앰플리튜드)\s*실측")
 EMOJI = re.compile("[\U0001F300-\U0001FAFF⌀-⏿☀-➿⬀-⯿]")
 ALLOWED_EMOJI = {"⚠", "\U0001F4D8", "✓", "✔"}  # ⚠ 📘 ✓ ✔
 URL = re.compile(r"https?://\S+")
@@ -57,6 +62,7 @@ def strip(line):
 def check(path):
     issues = []
     in_code = False
+    in_details = False
     with open(path, encoding="utf-8") as f:
         for n, raw in enumerate(f, 1):
             line = raw.rstrip("\n")
@@ -65,6 +71,10 @@ def check(path):
                 continue
             if in_code:
                 continue
+            if line.strip().startswith("<details"):
+                in_details = True
+            elif line.strip().startswith("</details"):
+                in_details = False
             skip_kinds = None
             sk = re.search(r"lint-skip(?::\s*([^>]*))?", line)
             if sk:
@@ -104,6 +114,16 @@ def check(path):
                             break
             if LABEL.search(text):
                 issues.append((n, "라벨", "맥락:"))
+            if re.match(r"^\s*[-*]\s+\S", text) and "<!--" not in line and re.search(r"[가-힣a-zA-Z0-9)]\.\s*$", text):
+                issues.append((n, "불릿 끝 마침표", "불릿 끝에 마침표를 붙이지 않음"))
+            if text.lstrip().startswith("|"):
+                m = UXFORM.search(text)
+                if m:
+                    issues.append((n, "표시 형태", f"'{m.group()}' → 표시 형태는 디자인에서 정함. 무엇을 보여주고 알려야 하는지만 씀 (기존 화면 설명이면 lint-skip: 표시 형태)"))
+            if not in_details:
+                m = EVIDENCE_INLINE.search(text)
+                if m:
+                    issues.append((n, "근거 위치", "본문에는 값만. 기간, 모수, 쿼리는 섹션 끝 '데이터 근거' 펼치기에"))
             if re.search(r"\*\*[^*<]{0,10}문구[^*<]{0,10}\*\*", line):
                 issues.append((n, "문구 소제목", "'문구' 소제목을 따로 두지 않고 그 문구가 보이는 요소 바로 아래에 씀"))
             if DRAFT.search(line):
@@ -161,7 +181,7 @@ def check_shape(path):
     """양식 검사: 넣지 않는 섹션, 결정 날짜, 문단 서술, 메타의 문서 유형, 구현 상세 5열과 화면 표 3열, 차수 섞임"""
     out = []
     lines = open(path, encoding="utf-8").read().split("\n")
-    in_code = in_comment = False
+    in_code = in_comment = in_details = False
     h2 = ""          # 지금 있는 '## N.' 제목
     region_first_table = True
     has_impl = has_screen = False
@@ -181,6 +201,14 @@ def check_shape(path):
                 in_comment = False
             continue
         if "lint-skip" in line:
+            continue
+        if s.startswith("<details"):
+            in_details = True
+        if s.startswith("</details"):
+            in_details = False
+            continue
+        if in_details:
+            # 데이터 근거 블록: 'M/D~M/D 기준' 같은 집계 기간과 표는 결정 날짜, 양식 검사 대상이 아님
             continue
         m = HEAD_ANY.match(s)
         if m:
@@ -267,6 +295,95 @@ def check_structure(path):
         out.append((1, "구조", "번호 섹션 없음. references/template.md의 섹션 순서를 씀"))
     return out
 
+PROBLEM_MAX = 9
+H2_ANY = re.compile(r"^##\s+\d+\.\s+(.*)$")
+H3_ANY = re.compile(r"^###\s+\d+-\d+\.\s+(.*)$")
+
+
+TERM_HEADER = ["용어", "설명", "화면 상 노출되는 문구"]
+SUMMARY = re.compile(r"<summary>(.*?)</summary>")
+
+
+def check_v57(path):
+    """v5.7: 용어 정의와 참고는 맨 아래, 문제는 9줄 이내, 코드 블록은 '데이터 근거' 펼치기 안에만,
+    펼치기 제목은 '데이터 근거: {주제}', 펼치기 표의 비율은 분자와 분모, 용어 정의 표는 3열"""
+    out = []
+    in_code = in_details = in_problem = False
+    problem_line, problem_bullets = 0, 0
+    h2s = []  # (줄, 제목)
+    cur_h2 = ""
+    lines = open(path, encoding="utf-8").read().split("\n")
+    for n, raw in enumerate(lines, 1):
+        line = raw.rstrip("\n")
+        s = line.strip()
+        if "lint-skip" in line:
+            continue
+        m = SUMMARY.search(s)
+        if m and not m.group(1).strip().startswith("데이터 근거:"):
+            out.append((n, "근거 블록", f"펼치기 제목 '{m.group(1).strip()}' → '데이터 근거: {{주제}}'"))
+        if s.startswith("<details"):
+            in_details = True
+            continue
+        if s.startswith("</details"):
+            in_details = False
+            continue
+        if s.startswith("```"):
+            if not in_code and not in_details:
+                out.append((n, "코드 블록", "코드 블록은 '데이터 근거' 펼치기 안에만 씀"))
+            in_code = not in_code
+            continue
+        if in_code:
+            continue
+        if in_details and s.startswith("|") and not TABLE_SEP.match(s):
+            row = cells(s)
+            if len(row) >= 2 and row[0] != "항목" and "%" in row[1] and "/" not in row[1]:
+                out.append((n, "비율 분모", f"'{row[1]}' → 분자와 분모를 같이: '12.8% (200건 / 1,558건)'"))
+        if s.startswith("|") and not TABLE_SEP.match(s) and cur_h2 == "용어 정의":
+            nxt = lines[n].strip() if n < len(lines) else ""
+            row = cells(s)
+            if TABLE_SEP.match(nxt) and row[:3] != TERM_HEADER:
+                out.append((n, "용어 정의 표", f"열이 '{' | '.join(row)}' → '용어 | 설명 | 화면 상 노출되는 문구'"))
+        m = H2_ANY.match(s)
+        if m:
+            cur_h2 = re.sub(r"<!--.*?-->", "", m.group(1)).strip()
+            h2s.append((n, cur_h2))
+            in_problem = False
+            continue
+        m = H3_ANY.match(s)
+        if m:
+            title = re.sub(r"<!--.*?-->", "", m.group(1)).strip()
+            in_problem = title == "문제"
+            if in_problem:
+                problem_line = n
+            if title == "참고":
+                out.append((n, "섹션 순서", "참고는 개요 아래에 두지 않고 문서 맨 아래 섹션으로"))
+            continue
+        # 묶음 제목(현재 상황, 유저가 겪는 어려움, 데이터)은 세지 않고 하위 불릿만 셈
+        if in_problem and not in_details and re.match(r"^\s+[-*]\s+\S", line):
+            problem_bullets += 1
+    if problem_bullets > PROBLEM_MAX:
+        out.append((problem_line, "문제 길이", f"불릿 {problem_bullets}줄 → 현재 상황, 유저가 겪는 어려움, 데이터 세 묶음으로 {PROBLEM_MAX}줄 이내. 나머지 수치는 '데이터 근거' 펼치기에"))
+    titles = [t for _, t in h2s]
+    body_idx = [i for i, t in enumerate(titles) if "구현 상세" in t or "화면" in t]
+    if h2s and "용어 정의" not in titles:
+        out.append((1, "용어 정의 표", "'용어 정의' 섹션이 없음. 문서에서 부르는 이름과 화면 문구를 표로 둠 (참고 바로 앞)"))
+    for i, (n, t) in enumerate(h2s):
+        if t == "용어":
+            out.append((n, "용어 정의 표", "섹션 이름은 '용어 정의'"))
+        if t not in ("용어", "용어 정의", "참고"):
+            continue
+        if body_idx and i < max(body_idx):
+            out.append((n, "섹션 순서", f"'{t}'는 구현 상세와 화면 뒤, 문서 맨 아래에 둠"))
+        elif t == "참고" and i != len(h2s) - 1:
+            out.append((n, "섹션 순서", "참고는 문서의 마지막 섹션"))
+        elif t in ("용어", "용어 정의") and not (i == len(h2s) - 1 or (i == len(h2s) - 2 and titles[-1] == "참고")):
+            out.append((n, "섹션 순서", "용어 정의는 참고 바로 앞, 참고가 없으면 마지막 섹션"))
+    return out
+
+
+def run_all(path):
+    return check(path) + check_counts(path) + check_structure(path) + check_shape(path) + check_v57(path)
+
 
 def main():
     if len(sys.argv) < 2:
@@ -274,7 +391,7 @@ def main():
         return 2
     total = 0
     for path in sys.argv[1:]:
-        for n, kind, what in check(path) + check_counts(path) + check_structure(path) + check_shape(path):
+        for n, kind, what in run_all(path):
             print(f"{path}:{n}: {kind}: {what}")
             total += 1
     if total:

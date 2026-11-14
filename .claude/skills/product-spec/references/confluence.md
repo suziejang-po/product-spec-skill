@@ -16,7 +16,7 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 
 - Atlassian MCP는 v2(Streamable HTTP) 연결이어야 한다. 예전 v1(SSE) 연결은 요청이 거절된다. 거절되면 "Atlassian 연결을 다시 해 주세요 (설정 > 커넥터)" 안내
 - 본문에 storage XML(`<ac:structured-macro>`)을 쓰지 않는다. MCP html 형식은 이를 글자 그대로 보여준다. 매크로는 `data-type="extension"` 꼴 (`scripts/parent_page.py` 참고)
-- `contentFormat`는 `html`. 변환기가 금지 기호를 치환하고, 표 첫 열이 `#`이면 번호 열을 40으로, 화면 단위 3열 표는 140, 200, 나머지로 폭을 고정
+- `contentFormat`는 `html`. 변환기가 금지 기호를 치환하고, 메타 표(첫 칸 PO)는 첫 열만 회색 머리글로, `<details>` 데이터 근거는 Confluence 펼치기로 바꾸고, 표 첫 열이 `#`이면 번호 열을 40으로, 화면 단위 3열 표는 140, 200, 나머지로 폭을 고정
 - 변환기가 표준 오류로 본문 크기와 알림(첨부 정보 없음, 그림 파일 없음)을 낸다. 알림은 게시 안내에 그대로 붙임
 - 본문은 `--out body.html`로 파일에도 저장하고, `updateConfluencePage`에 넣기 전에 파일 크기와 인자 길이가 같은지 확인 (잘림 방지). 43KB 본문은 한 번에 올라갔다 (2026-10-12 실측). 한두 줄 수정은 「작은 수정」 경로
 - 게시 전 lint 통과 필수. 변환기가 먼저 `lint_spec.py`를 돌리고 위반이 있으면 본문을 만들지 않고 종료 코드 1로 멈춘다. 이때는 위반을 고쳐 다시 변환한다
@@ -27,7 +27,7 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 1. 안내: "Confluence에 새 페이지를 만듭니다 (5분 정도)"
 2. `getAccessibleAtlassianResources`로 cloudId
 3. 제목 `(작성중) [{올해}] Product Spec: {제목}`으로 `createConfluencePage`. 그림 자리를 비운 본문으로 먼저 만든다 (그림은 페이지가 있어야 첨부 가능)
-4. 응답의 pageId를 즉시 로컬 spec.md 첫 줄에 `<!-- Confluence Page ID: {pageId} -->`로 기록하고 저장. 본문 메타 표에는 넣지 않음 (변환기가 주석을 지우므로 Confluence에는 보이지 않음) (이후 단계가 실패해도 페이지를 잃지 않기 위함)
+4. 응답의 pageId와 버전을 즉시 로컬 spec.md 첫 줄에 `<!-- Confluence Page ID: {pageId}, 게시 버전: {N} -->`로 기록하고 저장. 이후 게시와 갱신마다 버전을 고친다. 본문 메타 표에는 넣지 않음 (변환기가 주석을 지우므로 Confluence에는 보이지 않음) (이후 단계가 실패해도 페이지를 잃지 않기 위함)
 5. 그림 업로드 → media.json → 본문 재변환 → `updateConfluencePage` (`references/diagram.md`)
 6. 수치 인라인 댓글 (아래)
 7. 안내: "게시: {URL}. 지금은 '제품 출시 미정' 아래 (작성중) 상태입니다. 출시가 확정되면 알려 주세요"
@@ -36,22 +36,29 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 
 ## 갱신 (spec.md 첫 줄에 Page ID 주석 있음)
 
+수정안 전체를 작성자가 확인한 뒤에만 시작한다. 확인 전에는 페이지를 고치지 않는다
+
 1. 안내: "Confluence 페이지를 갱신합니다 (5분 정도). 끝날 때까지 페이지 편집을 멈춰 주세요"
-2. `getConfluencePage(pageId)`로 `version.number`, `version.by.accountId`, `version.by.displayName`, `version.when` 확인. 이전에 읽은 값을 재사용하지 않음
-3. `atlassianUserInfo`의 본인 accountId와 비교. 다른 사람이 마지막 편집자면 멈추고 묻는다
+2. 반영 직전에 `getConfluencePage(pageId, contentFormat="html")`로 본문과 `version.number`, `version.by`, `version.when`을 읽는다. 이전에 읽은 값을 재사용하지 않음
+3. 지난 게시 뒤 Confluence에서 바뀐 것이 있는지 본다. 첫 줄 주석의 `게시 버전`과 지금 `version.number`가 다르면 누군가(작성자 본인 포함) 페이지에서 고친 것
+   - 다른 사람이 마지막 편집자면 멈추고 묻는다
    ```
    ⚠️ 다른 사람의 편집이 있습니다. 마지막 편집: {displayName} / {when}
-   로컬 스펙으로 전체를 덮어쓰면 그 편집이 사라집니다. 'yes' 덮어씀 / 'cancel' 중단 (중단 후 Confluence 내용을 로컬에 먼저 반영할 수 있습니다)
+   이 편집을 지키고 바뀐 섹션만 고칩니다. 'yes' 진행 / 'cancel' 중단
    ```
-4. 로컬 스펙 전체를 변환해 `updateConfluencePage`. `contentFormat`는 `html`, `versionMessage`에 변경 요약 한 줄
-5. 응답 `version.number`가 N+1이 아니면 동시 편집으로 보고 즉시 멈추고 보고
-6. 안내: "갱신 완료. 편집 가능"
+   - 페이지에서 바뀐 글은 먼저 로컬 `spec.md`에 옮긴다 (「Confluence에서 직접 고친 뒤 로컬 맞추기」)
+4. 지킬 것을 찾는다: 인라인 댓글(`data-annotation-id`), 멘션(`data-type="mention"`), 이미지(`data-type="media"`), 작성자가 바꾼 표 너비(`data-colwidth`가 변환기 기본값과 다른 표), 상태 매크로
+   - 하나도 없으면 로컬 전체를 변환해 `updateConfluencePage` (`contentFormat`는 `html`)
+   - 하나라도 있으면 전체 덮어쓰기를 하지 않는다. 읽은 HTML에서 확인받은 섹션의 블록만 변환기 출력으로 바꾸고 나머지 HTML은 글자 하나 바꾸지 않고 그대로 보낸다. 바꾸는 섹션 안에 인라인 댓글이 있으면 `<span class="annotation" …>`을 같은 글자에 다시 씌운다. 표 너비는 기존 `data-colwidth`를 그대로 옮긴다. 다시 씌울 글자가 사라지면 반영 뒤 '인라인 댓글이 원문을 잃음'으로 알린다
+5. `versionMessage`에 변경 요약 한 줄. 응답 `version.number`가 읽은 값 + 1이 아니면 동시 편집으로 보고 즉시 멈추고 보고
+6. 응답 버전을 로컬 첫 줄 주석에 `<!-- Confluence Page ID: {pageId}, 게시 버전: {N} -->`로 기록
+7. 안내: "갱신 완료. 편집 가능". 확인받은 범위 밖에서 바꾼 곳(번호 맞춤, 연쇄 갱신)이 있으면 한 줄씩 덧붙임
 
 ## 작은 수정 (Chrome 경로)
 
 한두 줄을 고치는데 본문 전체(40KB 안팎)를 MCP 인자로 다시 보내면 느리고 잘릴 위험이 있다. Claude in Chrome이 있고 Confluence에 로그인돼 있으면 페이지에서 REST로 그 부분만 바꾼다 (2026-10-12 실측)
 
-1. 페이지를 열고 `fetch('/wiki/api/v2/pages/{pageId}?body-format=storage')`로 본문과 `version.number`, `version.authorId`를 읽음. 마지막 편집자가 본인이 아니면 갱신 절차 3번처럼 멈추고 묻는다
+1. 페이지를 열고 `fetch('/wiki/api/v2/pages/{pageId}?body-format=storage')`로 본문과 `version.number`, `version.authorId`를 읽음. 마지막 편집자가 본인이 아니면 갱신 절차 3번처럼 멈추고 묻는다. 끝나면 로컬 첫 줄의 게시 버전을 고친다
 2. 바꿀 문자열이 본문에 정확히 한 번 나오는지 확인. 0번이거나 2번 이상이면 멈춤
    - 목록 항목을 나누거나 더할 때는 `<li><p>…</p></li>` 꼴을 그대로 지킨다. `<p>` 안에서 `</li><li>`로 자르면 빈 항목이 생긴다 (2026-10-13 실측)
 3. 문자열을 바꾼 본문으로 `PUT /wiki/api/v2/pages/{pageId}` (`representation: storage`, `version.number`는 읽은 값 + 1, `version.message`에 변경 한 줄)
@@ -69,12 +76,12 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 
 - 상위 페이지
   - 제목 `[{올해}] Product Spec: {제목}`. 로컬은 `docs/specs/{슬러그}/index.md`, Page ID는 그 첫 줄
-  - 본문은 `python3 {SKILL_DIR}/scripts/parent_page.py --summary "{1차 문서 1-5 솔루션 첫 줄}"` 출력만. Confluence '하위 페이지' 매크로가 차수 페이지 목록을 그린다. 차수 페이지가 늘어도 상위 본문은 고치지 않는다
+  - 본문은 `python3 {SKILL_DIR}/scripts/parent_page.py --summary "{1차 문서 솔루션 첫 줄}"` 출력만. Confluence '하위 페이지' 매크로가 차수 페이지 목록을 그린다. 차수 페이지가 늘어도 상위 본문은 고치지 않는다
   - 첫 차수를 게시할 때 상위 페이지가 없으면 먼저 만든다 (작성중 부모 아래, 기본 `4808376595`)
 - 차수 페이지
   - 제목 `(작성중) [{올해}] Product Spec: {제목} ({N}차)`. `createConfluencePage`의 parentId는 상위 페이지
   - 차수 폴더(`p1/`, `p2/`)마다 첫 게시와 갱신을 따로 한다. Page ID는 각 폴더 `spec.md` 첫 줄에. 한 페이지에 두 차수를 올리지 않는다
-  - 1-7 참고에 `상위 문서: {상위 URL}` 한 줄
+  - 맨 아래 참고 섹션에 `상위 문서: {상위 URL}` 한 줄
 - 출시 확정 이동은 상위 페이지만 옮긴다. 하위 페이지는 따라간다. 차수 페이지 제목의 `(작성중) `은 차수마다 따로 뗀다
 - 게시 안내에는 상위와 차수별 링크를 한 줄씩 모두 쓴다. 이번에 게시하지 않은 차수도 페이지가 있으면 같이 쓰고, 아직 없으면 `(아직 없음)`
   ```
@@ -105,10 +112,13 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 
 ## 수치 인라인 댓글
 
-근거(Amplitude 차트 링크, BQ 쿼리)가 있는 수치에만 단다. 근거가 출처 문서 참조뿐이면 댓글을 달지 않는다
+본문 수치마다 근거는 그 섹션의 데이터 근거 펼치기에 이미 있다. 인라인 댓글은 펼치기를 열지 않고 수치 옆에서 바로 보게 하는 용도. 근거(Amplitude 차트 링크, BQ 쿼리)가 있는 수치에만 단다. 근거가 출처 문서 참조뿐이면 댓글을 달지 않는다
+- 쿼리가 있으면 댓글 본문은 쿼리 원문. 요약하거나 줄이지 않는다
+- 쿼리와 차트 링크가 둘 다 있으면 쿼리 코드 블록 아래 링크 한 줄
+- 수치 문자열은 본문(펼치기 밖)에 보이는 그대로. 펼치기 안의 같은 수치에는 달지 않는다
 1. `getConfluencePage(pageId, contentFormat="markdown")`으로 렌더 텍스트를 받는다
 2. 수치 문자열(예: `56.26%`)이 본문에 몇 번 나오는지 센다 → `textSelectionMatchCount`
-3. `createConfluenceInlineComment(pageId, body, inlineCommentProperties={textSelection: "56.26%", textSelectionMatchCount: N, textSelectionMatchIndex: 0})`. 본문은 링크 한 줄 또는 `<pre><code class="language-sql">쿼리</code></pre>`
+3. `createConfluenceInlineComment(pageId, body, inlineCommentProperties={textSelection: "56.26%", textSelectionMatchCount: N, textSelectionMatchIndex: 0})`. 본문은 쿼리가 있으면 `<pre><code class="language-sql">{쿼리 원문}</code></pre>`, 없으면 차트 링크 한 줄
 4. 같은 수치가 두 곳 이상이면 첫 번째(index 0)에만
 5. 400이 나면 문자열이 렌더 텍스트와 다른 것. 표 셀 안의 수치는 앞뒤 공백 없이 정확히 맞춘다
 

@@ -11,6 +11,15 @@ out=$(python3 $S/scripts/lint_spec.py tests/fixtures/bad-spec.md)
 for kind in "건수 줄" "메타" "문단 서술" "결정 날짜" "구현 상세 표" "넣지 않는 섹션" "확인 표시" "차수 섞임"; do
   if grep -q ": $kind:" <<<"$out"; then echo "검출 OK: $kind"; else echo "실패: '$kind'를 잡지 못함"; fail=1; fi
 done
+# v5.7 검사: 문제 길이, 근거 위치, 코드 블록 위치, 섹션 순서, 표시 형태, 용어 정의, 근거 블록 제목, 비율 분모
+out57=$(python3 $S/scripts/lint_spec.py tests/fixtures/bad-spec-v57.md)
+for kind in "문제 길이" "근거 위치" "코드 블록" "섹션 순서" "표시 형태" "용어 정의 표" "근거 블록" "비율 분모" "불릿 끝 마침표"; do
+  if grep -q ": $kind:" <<<"$out57"; then echo "검출 OK: $kind"; else echo "실패: '$kind'를 잡지 못함"; fail=1; fi
+done
+# 메타 표는 첫 열만 머리글, 펼치기는 Confluence 펼치기로
+body=$(python3 $S/scripts/md_to_confluence.py $S/references/template-example.md 2>/dev/null)
+if grep -q '<tr><th data-colwidth="160"><p>PO</p></th><td' <<<"$body" && ! grep -q '<thead><tr><th[^>]*><p>PO</p>' <<<"$body"; then echo "통과 OK: 메타 표 첫 열 머리글"; else echo "실패: 메타 표 머리글"; fail=1; fi
+if grep -q '<details><summary>데이터 근거: ' <<<"$body" && grep -q '<details><summary>[^<]*</summary>.*<pre><code class="language-sql">' <<<"$body"; then echo "통과 OK: 데이터 근거 펼치기와 쿼리"; else echo "실패: 데이터 근거 펼치기"; fail=1; fi
 # 도메인 말 '1차 면접'은 차수 섞임으로 잡지 않아야 함
 printf '## 1. 개요\n\n- 서류 통과자는 1차 면접으로 이동\n' > /tmp/_phase_ok.md
 if python3 $S/scripts/lint_spec.py /tmp/_phase_ok.md | grep -q '차수 섞임'; then echo "실패: '1차 면접'을 차수 섞임으로 잡음"; fail=1; else echo "통과 OK: 도메인 말 '1차 면접'은 통과"; fi

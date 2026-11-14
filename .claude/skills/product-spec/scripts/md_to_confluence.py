@@ -7,6 +7,8 @@
 - 화면, 진입점, 상세 내용 3열 표(New Product)는 140, 200, 나머지로 고정
 - [글자](#제목)은 같은 페이지 제목으로 가는 링크로 바꿈
 - 표 셀 안의 '- ' 줄은 불릿, '  - ' 는 한 단계 아래 불릿, '1. ' 은 번호 목록으로 바꿈
+- 메타 표(첫 칸이 PO인 2열 표)는 첫 열만 머리글(회색), 오른쪽 열은 값(흰색)으로 만듦
+- <details><summary>제목</summary> … </details> 는 Confluence 펼치기로 바꿈 (데이터 근거)
 - 변환 직전 금지 기호를 치환
 - 변환 전에 lint_spec.py 검사를 돌리고, 위반이 있으면 본문을 만들지 않고 종료 코드 1 (게시 차단)"""
 import argparse
@@ -159,6 +161,15 @@ class Converter:
     def table(self, rows):
         header, body = rows[0], rows[2:]
         ncol = len(header)
+        if ncol == 2 and header[0].strip() == "PO":
+            # 메타 표: 마크다운의 첫 행도 값 행이다. 첫 열만 머리글 칸으로, 오른쪽 열은 일반 칸으로
+            out = ['<table data-display-mode="fixed">', "<tbody>"]
+            for r in [header] + body:
+                r = (r + ["", ""])[:2]
+                out.append(f'<tr><th data-colwidth="160"><p>{inline(r[0].strip())}</p></th>'
+                           f'<td data-colwidth="{TABLE_WIDTH - 160}">{cell_html(r[1].strip())}</td></tr>')
+            out.append("</tbody></table>")
+            return "".join(out)
         numbered = header[0].strip() == "#"
         widths = None
         names = [h.strip() for h in header]
@@ -209,6 +220,27 @@ class Converter:
                 cls = f' class="language-{html.escape(lang)}"' if lang else ""
                 out.append(f"<pre><code{cls}>{html.escape(chr(10).join(code))}</code></pre>")
                 continue
+            if s.startswith("<details"):
+                # 펼치기. 안쪽은 같은 규칙으로 다시 변환 (목록, 코드 블록, 표)
+                inner, title = [], "데이터 근거"
+                rest = re.sub(r"^<details[^>]*>", "", s)
+                if rest.strip():
+                    inner.append(rest)
+                i += 1
+                while i < len(lines) and "</details>" not in lines[i]:
+                    inner.append(lines[i])
+                    i += 1
+                if i < len(lines):
+                    inner.append(lines[i].split("</details>")[0])
+                    i += 1
+                text_in = "\n".join(inner)
+                ms = re.search(r"<summary>(.*?)</summary>", text_in, flags=re.S)
+                if ms:
+                    title = ms.group(1).strip()
+                    text_in = text_in.replace(ms.group(0), "")
+                body_in = self.convert(text_in) or "<p></p>"
+                out.append(f"<details><summary>{html.escape(clean(title), quote=False)}</summary>{body_in}</details>")
+                continue
             m = re.match(r"^(#{1,6})\s+(.*)", s)
             if m:
                 out.append(f"<h{len(m.group(1))}>{inline(m.group(2))}</h{len(m.group(1))}>")
@@ -256,7 +288,7 @@ def main():
     a = ap.parse_args()
     # 게시 전 lint 통과 필수. 위반이 있으면 본문을 만들지 않는다 (Confluence에 올라가는 것을 코드로 막음)
     import lint_spec  # noqa: E402
-    issues = lint_spec.check(a.spec) + lint_spec.check_counts(a.spec) + lint_spec.check_structure(a.spec) + lint_spec.check_shape(a.spec)
+    issues = lint_spec.run_all(a.spec)
     if issues:
         for n, kind, what in issues:
             print(f"{a.spec}:{n}: {kind}: {what}", file=sys.stderr)

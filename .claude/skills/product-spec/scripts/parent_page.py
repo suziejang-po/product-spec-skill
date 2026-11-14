@@ -27,7 +27,7 @@ def build(summary):
 
 def main():
     ap = argparse.ArgumentParser(description="차수별 스펙의 상위 페이지 본문 생성")
-    ap.add_argument("--summary", default="", help="프로젝트 한 줄 설명 (1차 문서 1-5 솔루션 첫 줄)")
+    ap.add_argument("--summary", default="", help="프로젝트 한 줄 설명 (1차 문서 솔루션 첫 줄)")
     ap.add_argument("--out", help="본문을 이 파일에도 저장")
     a = ap.parse_args()
     body = build(a.summary.strip())
