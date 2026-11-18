@@ -186,7 +186,12 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 
 ### Phase 6. Jira 에픽
 
-게시가 끝나면 `references/jira.md`대로 에픽을 만든다. 메타 Jira 칸이 비어 있을 때만, 차수 문서마다 하나. 만들기 전 미리보기로 한 번 확인받고, 만든 뒤 메타 Jira 칸에 링크를 넣어 페이지를 갱신
+게시가 끝나면 `references/jira.md`대로 에픽을 만든다 (원티드 채용 플랫폼 지라 사용 가이드 v2 기준). 메타 Jira 칸이 비어 있을 때만
+- `scripts/jira_preview.py`로 미리보기를 만든다. 에픽 하나는 배포 단위 하나라서, 구현 상세가 하위 섹션으로 나뉘면 에픽도 여럿
+- 레이블은 필수 (`pod-`, `chapter-`, `exp-`, `tf-`, `prj-`, 영어 소문자, 띄어쓰기는 `-`). 없으면 만들지 않음
+- Start Date와 기한은 메타 '개발 일정'에서. 기획 일정과 배포 목표는 쓰지 않음. 수정버전은 Jira 릴리스 중에서 고름
+- A/B 테스트 포함이면 실험 추적 Task를 하나 더 만들고 에픽과 relates to로 연결. SQA 티켓 키를 받으면 blocks로 연결
+- 만들기 전 미리보기로 한 번 확인받는다
 
 ## 확인 필요 다루기
 
@@ -277,6 +282,7 @@ Wantedlab의 개발 킥오프용 스펙을 만든다. 규칙은 이 파일, 양�
 - references/confluence.md
 - references/writing-style.md
 - references/jira.md
+- scripts/jira_preview.py
 - references/change-prototype.md
 - references/change-prototype-template.html
 - references/market-research.md
