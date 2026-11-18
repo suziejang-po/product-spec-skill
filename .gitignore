@@ -1,3 +1,6 @@
 docs/samples/
 .omc/
 __pycache__/
+# 스펙 작업 파일은 레포에 올리지 않음 (사내 API, 테이블 이름 포함)
+docs/specs/
+docs/spec-context.md

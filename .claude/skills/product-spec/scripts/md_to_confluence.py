@@ -7,6 +7,7 @@
 - 화면, 진입점, 상세 내용 3열 표(New Product)는 140, 200, 나머지로 고정
 - [글자](#제목)은 같은 페이지 제목으로 가는 링크로 바꿈
 - 표 셀 안의 '- ' 줄은 불릿, '  - ' 는 한 단계 아래 불릿, '1. ' 은 번호 목록으로 바꿈
+- 첫 `# ` 제목은 페이지 제목과 같아서 본문에서 뺌
 - 메타 표(첫 칸이 PO인 2열 표)는 첫 열만 머리글(회색), 오른쪽 열은 값(흰색)으로 만듦
 - <details><summary>제목</summary> … </details> 는 Confluence 펼치기로 바꿈 (데이터 근거)
 - 변환 직전 금지 기호를 치환
@@ -279,6 +280,18 @@ class Converter:
         return "".join(out)
 
 
+def drop_title(text):
+    """첫 '# ' 제목 줄을 뺀다. Confluence 페이지 제목과 같아서 본문에 두 번 나오지 않게"""
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        if line.startswith("# "):
+            del lines[i]
+            break
+        if line.startswith("#") or line.startswith("```"):
+            break
+    return "\n".join(lines)
+
+
 def main():
     ap = argparse.ArgumentParser(description="스펙 마크다운을 Confluence HTML로 변환")
     ap.add_argument("spec")
@@ -297,7 +310,7 @@ def main():
     print("lint 통과", file=sys.stderr)
     media = json.load(open(a.media_json, encoding="utf-8")) if a.media_json else {}
     conv = Converter(os.path.dirname(os.path.abspath(a.spec)), a.diagram_mode, media)
-    body = conv.convert(open(a.spec, encoding="utf-8").read())
+    body = conv.convert(drop_title(open(a.spec, encoding="utf-8").read()))
     if a.out:
         with open(a.out, "w", encoding="utf-8") as f:
             f.write(body)

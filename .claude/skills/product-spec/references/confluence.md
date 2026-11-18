@@ -16,6 +16,7 @@ python3 {SKILL_DIR}/scripts/md_to_confluence.py spec.md --diagram-mode attach --
 
 - Atlassian MCP는 v2(Streamable HTTP) 연결이어야 한다. 예전 v1(SSE) 연결은 요청이 거절된다. 거절되면 "Atlassian 연결을 다시 해 주세요 (설정 > 커넥터)" 안내
 - 본문에 storage XML(`<ac:structured-macro>`)을 쓰지 않는다. MCP html 형식은 이를 글자 그대로 보여준다. 매크로는 `data-type="extension"` 꼴 (`scripts/parent_page.py` 참고)
+- 마크다운 첫 줄의 `# [{연도}] Product Spec: …` 제목은 페이지 제목으로만 쓰고 본문에는 넣지 않는다. 변환기가 첫 `#` 제목을 뺀다
 - `contentFormat`는 `html`. 변환기가 금지 기호를 치환하고, 메타 표(첫 칸 PO)는 첫 열만 회색 머리글로, `<details>` 데이터 근거는 Confluence 펼치기로 바꾸고, 표 첫 열이 `#`이면 번호 열을 40으로, 화면 단위 3열 표는 140, 200, 나머지로 폭을 고정
 - 변환기가 표준 오류로 본문 크기와 알림(첨부 정보 없음, 그림 파일 없음)을 낸다. 알림은 게시 안내에 그대로 붙임
 - 본문은 `--out body.html`로 파일에도 저장하고, `updateConfluencePage`에 넣기 전에 파일 크기와 인자 길이가 같은지 확인 (잘림 방지). 43KB 본문은 한 번에 올라갔다 (2026-10-12 실측). 한두 줄 수정은 「작은 수정」 경로

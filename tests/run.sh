@@ -20,6 +20,10 @@ done
 body=$(python3 $S/scripts/md_to_confluence.py $S/references/template-example.md 2>/dev/null)
 if grep -q '<tr><th data-colwidth="160"><p>PO</p></th><td' <<<"$body" && ! grep -q '<thead><tr><th[^>]*><p>PO</p>' <<<"$body"; then echo "통과 OK: 메타 표 첫 열 머리글"; else echo "실패: 메타 표 머리글"; fail=1; fi
 if grep -q '<details><summary>데이터 근거: ' <<<"$body" && grep -q '<details><summary>[^<]*</summary>.*<pre><code class="language-sql">' <<<"$body"; then echo "통과 OK: 데이터 근거 펼치기와 쿼리"; else echo "실패: 데이터 근거 펼치기"; fail=1; fi
+# 본문 맨 위 '# [연도] Product Spec' 제목은 게시 본문에서 뺌 (페이지 제목과 중복)
+if python3 $S/scripts/md_to_confluence.py $S/references/template-example.md 2>/dev/null | grep -q '<h1>'; then echo "실패: 게시 본문에 h1 제목이 남음"; fail=1; else echo "통과 OK: 게시 본문에 제목 없음"; fi
+# 스펙 작업 파일은 git에서 제외
+if git check-ignore -q docs/specs/x/spec.md && git check-ignore -q docs/spec-context.md; then echo "통과 OK: 스펙 파일 git 제외"; else echo "실패: 스펙 파일이 git에 올라갈 수 있음"; fail=1; fi
 # Jira 에픽 미리보기 (v2 가이드): 배포 단위, 날짜, 레이블, A/B 테스트 Task, 이미 있는 Jira 칸
 jp() { python3 $S/scripts/jira_preview.py "$@"; }
 chk() { if python3 -c "import json,sys;d=json.load(sys.stdin);sys.exit(0 if ($2) else 1)" <<<"$1"; then echo "통과 OK: jira $3"; else echo "실패: jira $3"; fail=1; fi; }
