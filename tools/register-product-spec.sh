@@ -79,7 +79,7 @@ MARKET_NAME="$(python3 -c "import json;print(json.load(open('.claude-plugin/mark
 gh pr create --repo "$MARKET_REPO" --head "$BRANCH" \
   --title "feat: product-spec v$VERSION" \
   --body "## 변경
-- \`plugins/$PLUGIN\`을 v$VERSION으로 갱신
+- \`plugins/$PLUGIN\`을 v${VERSION}으로 갱신
 - 개발 레포: $SKILL_REPO (비공개)
 
 ## 설치
