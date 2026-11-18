@@ -2,10 +2,12 @@
 # product-spec 스킬을 wanteddev/claude-skills 마켓플레이스에 등록하거나 갱신하는 PR을 만든다
 # 필요: git, gh(로그인된 상태), python3. wanteddev/claude-skills 쓰기 권한
 # 실행: bash register-product-spec.sh
+#       특정 브랜치를 올릴 때: SKILL_REF=spec-skill-v5.7 bash register-product-spec.sh
 set -euo pipefail
 
 MARKET_REPO="${MARKET_REPO:-wanteddev/claude-skills}"
 SKILL_REPO="${SKILL_REPO:-suziejang-po/product-spec-skill}"
+SKILL_REF="${SKILL_REF:-}"   # 올릴 브랜치. 비우면 main
 PLUGIN=product-spec
 BRANCH="update-${PLUGIN}-$(date +%Y%m%d-%H%M%S)"
 WORK="$(mktemp -d)"
@@ -13,7 +15,7 @@ trap 'rm -rf "$WORK"' EXIT
 
 echo "1/5 레포 내려받기"
 gh repo clone "$MARKET_REPO" "$WORK/market" -- --depth 1 -q
-gh repo clone "$SKILL_REPO" "$WORK/skill" -- --depth 1 -q
+gh repo clone "$SKILL_REPO" "$WORK/skill" -- --depth 1 -q ${SKILL_REF:+--branch "$SKILL_REF"}
 VERSION="$(grep -o 'skill-version: [0-9.]*' "$WORK/skill/.claude/skills/$PLUGIN/SKILL.md" | awk '{print $2}')"
 
 echo "2/5 플러그인 폴더 만들기 (v$VERSION)"
