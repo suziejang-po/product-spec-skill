@@ -15,8 +15,28 @@ trap 'rm -rf "$WORK"' EXIT
 
 echo "1/5 레포 내려받기"
 gh repo clone "$MARKET_REPO" "$WORK/market" -- --depth 1 -q
-gh repo clone "$SKILL_REPO" "$WORK/skill" -- --depth 1 -q ${SKILL_REF:+--branch "$SKILL_REF"}
+# 개발 레포는 전체 기록을 받음 (아래 덮어쓰기 검사에 씀)
+gh repo clone "$SKILL_REPO" "$WORK/skill" -- -q ${SKILL_REF:+--branch "$SKILL_REF"}
 VERSION="$(grep -o 'skill-version: [0-9.]*' "$WORK/skill/.claude/skills/$PLUGIN/SKILL.md" | awk '{print $2}')"
+
+# 덮어쓰기 검사: claude-skills에 있는 파일 내용이 개발 레포 기록에 한 번도 없으면,
+# 누군가 claude-skills에서 직접 고친 것. 그대로 진행하면 그 수정이 사라지므로 멈춘다
+CUR="$WORK/market/plugins/$PLUGIN/skills/$PLUGIN"
+if [ -d "$CUR" ]; then
+  FOREIGN=""
+  while IFS= read -r -d '' f; do
+    h="$(git hash-object "$f")"
+    git -C "$WORK/skill" cat-file -e "$h" 2>/dev/null || FOREIGN="$FOREIGN\n   - ${f#$CUR/}"
+  done < <(find "$CUR" -type f ! -name '*.bak*' ! -path '*__pycache__*' -print0)
+  if [ -n "$FOREIGN" ]; then
+    echo "멈춤: claude-skills에서 다른 사람이 고친 파일이 있어요. 덮어쓰면 그 수정이 사라져요"
+    printf "$FOREIGN\n"
+    echo "   최근 수정 기록:"
+    gh api "repos/$MARKET_REPO/commits?path=plugins/$PLUGIN&per_page=5" --jq '.[] | "   - \(.commit.message | split("\n")[0]) (\(.commit.author.name), \(.commit.author.date[:10]))"' || true
+    echo "   그 수정을 개발 레포에 먼저 합친 뒤 다시 실행하세요. 정말 덮어쓰려면 FORCE=1"
+    [ "${FORCE:-}" = "1" ] || exit 1
+  fi
+fi
 
 echo "2/5 플러그인 폴더 만들기 (v$VERSION)"
 DEST="$WORK/market/plugins/$PLUGIN"
