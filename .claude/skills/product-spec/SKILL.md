@@ -1,6 +1,6 @@
 ---
 name: product-spec
-description: 원티드 기능 기획, 스펙, PRD 요청에는 brainstorming 같은 일반 기획 스킬보다 이 스킬을 먼저 쓴다. Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성', 'PRD 만들어줘', '스펙 수정', '기능 기획', '요구사항 정리', '기능 정의', '개발 킥오프 문서', '~하는 기능 만들자', '변경 표시 프로토타입 만들어줘', '/product-spec' 요청에 쓴다. 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 기능에 A/B 테스트가 붙으면 실험 설계까지 씀. 회고, 미팅록, 기능 없이 실험만 하는 PRD에는 안 씀. 실험만 하는 PRD는 exp-spec 스킬
+description: Wantedlab Product Spec(v5)을 쓰거나 고친다. '스펙 작성하자', '스펙 작성할거야', '스펙 써줘', '스펙 만들어줘', 'PRD 만들어줘', '스펙 수정', '변경 표시 프로토타입 만들어줘', '/product-spec' 요청에 쓴다. 아이디어 기획, 브레인스토밍 단계에는 쓰지 않음 (스펙을 쓰자고 할 때부터). 출처 있는 내용만 정해진 섹션 순서로 쓰고 빈칸은 질문, Confluence에 게시. 기능에 A/B 테스트가 붙으면 실험 설계까지 씀. 회고, 미팅록, 기능 없이 실험만 하는 PRD에는 안 씀. 실험만 하는 PRD는 exp-spec 스킬
 ---
 <!-- skill-version: 5.8.0 / skill-repo: wanteddev/claude-skills (plugins/product-spec) -->
 
