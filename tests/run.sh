@@ -32,9 +32,18 @@ chk() { if python3 -c "import json,sys;d=json.load(sys.stdin);sys.exit(0 if ($2)
 chk "$(jp $S/references/template-example.md --label pod-ax인재)" "d['epic_count']==1 and d['can_create'] and d['label_check']['ok']" "기능 스펙 에픽 1개"
 chk "$(jp $S/references/template-example-enhancement.md --url https://x/p/1)" "d['epic_count']==2 and '#2-1.-목록-표기-개선' in d['epics'][0]['description'] and '(2차)' in d['epics'][1]['summary']" "배포 단위 2개면 에픽 2개와 하위 섹션 링크"
 chk "$(jp tests/fixtures/jira-has-epic.md)" "not d['can_create']" "Jira 칸에 값이 있으면 만들지 않음"
-chk "$(jp $S/references/template-example-new.md)" "d['can_create']" "Jira 칸의 양식 자리 표시는 빈칸으로 봄"
+chk "$(jp $S/references/template-example-new.md --label pod-세미나)" "d['can_create']" "Jira 칸의 양식 자리 표시는 빈칸으로 봄"
 chk "$(jp tests/fixtures/jira-ab.md --label 'POD 지원')" "d['epics'][0]['start_date']=='2026-12-01' and d['epics'][0]['due_date']=='2026-12-19' and d['epics'][0]['labels']==['pod-지원'] and d['ab_test_task'] and d['ab_test_task']['labels'][0]=='exp-공고상세-지원버튼'" "개발 일정 날짜, 레이블 고침, 실험 Task"
 chk "$(jp $S/references/template-example.md)" "not d['label_check']['ok'] and d['epics'][0]['labels']==[]" "레이블 없으면 필수 안내"
+# PR #49 리뷰 반영
+chk "$(jp tests/fixtures/jira-chasu.md --label pod-ax인재)" "[e['summary'] for e in d['epics']]==['지원 현황 개선 (2-1차) 목록 표기 개선','지원 현황 개선 (2-2차) 결과 알림']" "차수 문서는 차수를 한 번만 (2-1차)"
+chk "$(jp tests/fixtures/jira-chasu.md --label pod-ax인재)" "(d['epics'][0]['start_date'],d['epics'][0]['due_date'])==('2026-12-01','2026-12-12') and (d['epics'][1]['start_date'],d['epics'][1]['due_date'])==('','') and d['split_question']" "섹션 일정 줄만 쓰고 없으면 비움, 나눌지 질문"
+chk "$(jp tests/fixtures/jira-chasu.md --label pod-ax인재 --single)" "d['epic_count']==1 and d['epics'][0]['summary']=='지원 현황 개선 (2차)' and d['epics'][0]['due_date']=='2026-12-31' and not d['split_question']" "하나로 만들면 메타 일정과 원래 제목"
+chk "$(jp tests/fixtures/jira-ab-expflag.md --label pod-지원)" "d['ab_test_task']['labels'][0]=='exp-detail-apply-cta'" "exp-로 시작하는 실험 Flag는 그대로"
+chk "$(jp tests/fixtures/jira-ab.md --label 'pod-ax인재,chapter-front')" "d['epics'][0]['labels']==['pod-ax인재','chapter-front']" "쉼표 레이블은 여러 개로"
+chk "$(jp $S/references/template-example.md --label pod-ax인재)" "'근거 코드 계산' not in d['epics'][0]['description'] and '- 근거 표기' in d['epics'][0]['description']" "에픽이 하나면 설명은 솔루션 묶음"
+if grep -rq "작성자에게 물을 것\|하나로 합칠까요" $S/scripts/jira_preview.py; then echo "실패: 스크립트 안내가 질문을 지시함"; fail=1; else echo "통과 OK: 스크립트 안내에 질문 지시 없음"; fi
+if jp --check-label "pod-ax인재,ax" >/dev/null; then echo "실패: 쉼표 레이블 중 틀린 것을 통과시킴"; fail=1; else echo "검출 OK: 쉼표 레이블 중 틀린 것"; fi
 for bad in "ax인재" "pod-" "" "POD AX"; do
   if jp --check-label "$bad" >/dev/null; then echo "실패: jira 레이블 '$bad'를 통과시킴"; fail=1; else echo "검출 OK: jira 레이블 '$bad'"; fi
 done

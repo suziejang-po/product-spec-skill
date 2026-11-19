@@ -3,11 +3,13 @@
 # 필요: git, gh(로그인된 상태), python3. wanteddev/claude-skills 쓰기 권한
 # 실행: bash register-product-spec.sh
 #       특정 브랜치를 올릴 때: SKILL_REF=spec-skill-v5.7 bash register-product-spec.sh
+#       열려 있는 PR에 이어 올릴 때: PR_BRANCH=update-product-spec-20261119-003224 bash register-product-spec.sh
 set -euo pipefail
 
 MARKET_REPO="${MARKET_REPO:-wanteddev/claude-skills}"
 SKILL_REPO="${SKILL_REPO:-suziejang-po/product-spec-skill}"
 SKILL_REF="${SKILL_REF:-}"   # 올릴 브랜치. 비우면 main
+PR_BRANCH="${PR_BRANCH:-}"   # 이미 열린 PR의 브랜치. 있으면 새 PR 대신 그 브랜치에 커밋을 더함
 PLUGIN=product-spec
 BRANCH="update-${PLUGIN}-$(date +%Y%m%d-%H%M%S)"
 WORK="$(mktemp -d)"
@@ -21,21 +23,26 @@ VERSION="$(grep -o 'skill-version: [0-9.]*' "$WORK/skill/.claude/skills/$PLUGIN/
 
 # 덮어쓰기 검사: claude-skills에 있는 파일 내용이 개발 레포 기록에 한 번도 없으면,
 # 누군가 claude-skills에서 직접 고친 것. 그대로 진행하면 그 수정이 사라지므로 멈춘다
-CUR="$WORK/market/plugins/$PLUGIN/skills/$PLUGIN"
-if [ -d "$CUR" ]; then
-  FOREIGN=""
+check_foreign() {
+  local CUR="$1/plugins/$PLUGIN/skills/$PLUGIN" where="$2" FOREIGN=""
+  [ -d "$CUR" ] || return 0
   while IFS= read -r -d '' f; do
-    h="$(git hash-object "$f")"
-    git -C "$WORK/skill" cat-file -e "$h" 2>/dev/null || FOREIGN="$FOREIGN\n   - ${f#$CUR/}"
+    git -C "$WORK/skill" cat-file -e "$(git hash-object "$f")" 2>/dev/null || FOREIGN="$FOREIGN\n   - ${f#$CUR/}"
   done < <(find "$CUR" -type f ! -name '*.bak*' ! -path '*__pycache__*' -print0)
   if [ -n "$FOREIGN" ]; then
-    echo "멈춤: claude-skills에서 다른 사람이 고친 파일이 있어요. 덮어쓰면 그 수정이 사라져요"
+    echo "멈춤: claude-skills ${where}에서 다른 사람이 고친 파일이 있어요. 덮어쓰면 그 수정이 사라져요"
     printf "$FOREIGN\n"
     echo "   최근 수정 기록:"
-    gh api "repos/$MARKET_REPO/commits?path=plugins/$PLUGIN&per_page=5" --jq '.[] | "   - \(.commit.message | split("\n")[0]) (\(.commit.author.name), \(.commit.author.date[:10]))"' || true
+    gh api "repos/$MARKET_REPO/commits?path=plugins/$PLUGIN&sha=$where&per_page=5" --jq '.[] | "   - \(.commit.message | split("\n")[0]) (\(.commit.author.name), \(.commit.author.date[:10]))"' || true
     echo "   그 수정을 개발 레포에 먼저 합친 뒤 다시 실행하세요. 정말 덮어쓰려면 FORCE=1"
     [ "${FORCE:-}" = "1" ] || exit 1
   fi
+}
+check_foreign "$WORK/market" main
+if [ -n "$PR_BRANCH" ]; then
+  git -C "$WORK/market" fetch -q --depth 1 origin "$PR_BRANCH"
+  git -C "$WORK/market" checkout -q -B "$PR_BRANCH" FETCH_HEAD
+  check_foreign "$WORK/market" "$PR_BRANCH"
 fi
 
 echo "2/5 플러그인 폴더 만들기 (v$VERSION)"
@@ -88,8 +95,17 @@ if claude plugin validate "$WORK/market" >/dev/null 2>&1; then echo "   claude p
 elif command -v claude >/dev/null; then claude plugin validate "$WORK/market"; exit 1
 else echo "   claude CLI가 없어 validate는 건너뜀"; fi
 
-echo "5/5 브랜치 올리고 PR 만들기"
 cd "$WORK/market"
+if [ -n "$PR_BRANCH" ]; then
+  echo "5/5 열린 PR 브랜치($PR_BRANCH)에 커밋 더하기"
+  git add -A
+  if git diff --cached --quiet; then echo "   바뀐 내용이 없음"; exit 0; fi
+  git commit -q -m "fix: product-spec v$VERSION 리뷰 반영"
+  git push -q origin "HEAD:$PR_BRANCH"
+  gh pr view "$PR_BRANCH" --repo "$MARKET_REPO" --json url --jq .url
+  exit 0
+fi
+echo "5/5 브랜치 올리고 PR 만들기"
 git checkout -q -b "$BRANCH"
 git add -A
 if git diff --cached --quiet; then echo "   바뀐 내용이 없어 PR을 만들지 않음"; exit 0; fi
@@ -100,7 +116,7 @@ gh pr create --repo "$MARKET_REPO" --head "$BRANCH" \
   --title "feat: product-spec v$VERSION" \
   --body "## 변경
 - \`plugins/$PLUGIN\`을 v${VERSION}으로 갱신
-- 개발 레포: $SKILL_REPO (비공개)
+- 개발 레포: $SKILL_REPO
 
 ## 설치
 \`\`\`
