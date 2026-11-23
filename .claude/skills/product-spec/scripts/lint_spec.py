@@ -381,8 +381,43 @@ def check_v57(path):
     return out
 
 
+META_ROWS = ["PO", "담당자", "Jira", "기획 일정", "디자인 일정", "개발 일정", "배포 목표", "플랫폼"]
+
+
+def check_meta(path):
+    """메타 표의 기본 행이 빠지거나 순서가 바뀌지 않았는지. 값은 비어 있어도 됨"""
+    lines = open(path, encoding="utf-8").read().split("\n")
+    start = None
+    for i, line in enumerate(lines):
+        if re.match(r"^###\s+\d+-\d+\.\s+메타", line.strip()):
+            start = i
+            break
+    if start is None:
+        return []
+    keys = []
+    first = None
+    for j in range(start + 1, len(lines)):
+        s = lines[j].strip()
+        if s.startswith("#"):
+            break
+        if s.startswith("|") and not TABLE_SEP.match(s):
+            first = first or j + 1
+            keys.append(re.sub(r"\*\*", "", cells(s)[0]).strip())
+        elif keys and not s.startswith("|") and s and not s.startswith("<!--"):
+            break
+    out = []
+    missing = [k for k in META_ROWS if k not in keys]
+    if missing:
+        out.append((first or start + 1, "메타 행", "빠진 행: " + ", ".join(missing) + ". 값이 없어도 행은 남김"))
+    else:
+        order = [k for k in keys if k in META_ROWS]
+        if order != META_ROWS:
+            out.append((first or start + 1, "메타 행", "행 순서: " + ", ".join(META_ROWS)))
+    return out
+
+
 def run_all(path):
-    return check(path) + check_counts(path) + check_structure(path) + check_shape(path) + check_v57(path)
+    return check(path) + check_counts(path) + check_structure(path) + check_shape(path) + check_v57(path) + check_meta(path)
 
 
 def main():

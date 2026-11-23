@@ -13,7 +13,7 @@ for kind in "건수 줄" "메타" "문단 서술" "결정 날짜" "구현 상세
 done
 # v5.7 검사: 문제 길이, 근거 위치, 코드 블록 위치, 섹션 순서, 표시 형태, 용어 정의, 근거 블록 제목, 비율 분모
 out57=$(python3 $S/scripts/lint_spec.py tests/fixtures/bad-spec-v57.md)
-for kind in "문제 길이" "근거 위치" "코드 블록" "섹션 순서" "표시 형태" "용어 정의 표" "근거 블록" "비율 분모" "불릿 끝 마침표"; do
+for kind in "문제 길이" "근거 위치" "코드 블록" "섹션 순서" "표시 형태" "용어 정의 표" "근거 블록" "비율 분모" "불릿 끝 마침표" "메타 행"; do
   if grep -q ": $kind:" <<<"$out57"; then echo "검출 OK: $kind"; else echo "실패: '$kind'를 잡지 못함"; fail=1; fi
 done
 # 메타 표는 첫 열만 머리글, 펼치기는 Confluence 펼치기로
