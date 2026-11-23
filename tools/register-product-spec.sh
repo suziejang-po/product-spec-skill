@@ -91,9 +91,13 @@ print(f"   source: {source}")
 PY
 
 echo "4/5 검사"
-if claude plugin validate "$WORK/market" >/dev/null 2>&1; then echo "   claude plugin validate 통과"
-elif command -v claude >/dev/null; then claude plugin validate "$WORK/market"; exit 1
-else echo "   claude CLI가 없어 validate는 건너뜀"; fi
+# product-spec 폴더만 검사한다. 마켓플레이스 전체를 검사하면 다른 팀 플러그인 오류로 멈출 수 있음
+if ! command -v claude >/dev/null; then echo "   claude CLI가 없어 validate는 건너뜀"
+elif claude plugin validate "$DEST" >/dev/null 2>&1; then echo "   product-spec 플러그인 validate 통과"
+else claude plugin validate "$DEST"; exit 1; fi
+if ! claude plugin validate "$WORK/market" >/dev/null 2>&1 && command -v claude >/dev/null; then
+  echo "   참고: 마켓플레이스 전체 검사에서 다른 플러그인 오류가 있어요 (product-spec과 무관, 등록은 계속)"
+fi
 
 cd "$WORK/market"
 if [ -n "$PR_BRANCH" ]; then
